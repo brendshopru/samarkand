@@ -17,7 +17,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--gold);outline:0}
 input[type=color]{height:42px;padding:2px}input[type=range]{padding:0}input[type=checkbox]{display:inline;width:auto;margin-right:.5rem}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem}
 @media(max-width:700px){.g2,.g3{grid-template-columns:1fr}}
-.drop{position:relative;aspect-ratio:3/4;border:1px dashed rgba(212,175,55,.5);display:grid;place-items:center;text-align:center;color:var(--mute);overflow:hidden;background:rgba(0,0,0,.25);transition:.3s}
+.drop{position:relative;aspect-ratio:16/9;border:1px dashed rgba(212,175,55,.5);display:grid;place-items:center;text-align:center;color:var(--mute);overflow:hidden;background:rgba(0,0,0,.25);transition:.3s}
 .drop.ov{background:rgba(212,175,55,.15);border-style:solid}
 .drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.drop img[hidden]+span{display:block}
 .drop span{position:relative;font-size:13px}.drop img:not([hidden])+span{display:none}
@@ -49,14 +49,17 @@ function render(){
  <div class="g2">${fld('gTitle','Название раздела с фото')}${fld('vTitle','Название раздела с видео')}</div>
  <div class="g3">${fld('gold','Цвет золота','color')}<label>Густота песка: <b>${s.sand}</b><input type="range" min=".5" max="2" step=".1" data-k="sand" value="${s.sand}"></label>
  <label>Зернистость штукатурки: <b>${s.grain}</b><input type="range" min="0" max="1" step=".05" data-k="grain" value="${s.grain}"></label></div>
- <div class="g2"><label>Анимация появления фото по умолчанию${animSel(s.anim)}</label>${fld('auto','Автолистание, секунд (0 — выключено)','number','min="0" step="1"')}</div></div>
+ <label>Анимация появления фото по умолчанию${animSel(s.anim)}</label>
+ <label>Как вписывать фото в рамку 16:9<select data-k="fit"><option value="cover"${s.fit==='contain'?'':' selected'}>Заполнить рамку (края обрезаются)</option><option value="contain"${s.fit==='contain'?' selected':''}>Показать целиком (с полями)</option></select></label></div>
  <p class="help">Слово песка лучше делать коротким. Изменения видны на сайте после нажатия «Сохранить» и обновления страницы презентации.</p>`;
- if(tab==='slides')p.innerHTML=`<p class="help">В каждом слайде три фото: слева и справа два варианта, в центре оригинал. На сайте нажатие на боковое фото ставит его в центр. Файл можно перетащить на рамку.</p>`+
+ if(tab==='slides')p.innerHTML=`<p class="help">Каждый слайд — отдельный блок на странице: сверху три фото (слева вариант A, по центру оригинал, справа вариант B), ниже видео. Блоки идут сверху вниз в том порядке, как в списке. Фото лучше 16:9 (1920×1080), файл можно перетащить на рамку. На сайте нажатие на боковое фото ставит его в центр.</p>`+
   D.slides.map((s,n)=>`<div class="card" data-list="slides" data-id="${s.id}"><div class="row"><b>Слайд ${n+1}</b><span class="sp2"></span>${btns}</div>
   <div class="g2"><label>Заголовок<input data-f="title" value="${esc(s.title)}"></label><label>Анимация входа${animSel(s.anim,1)}</label></div>
   <label>Подпись<textarea rows="2" data-f="caption">${esc(s.caption)}</textarea></label>
   <div class="g3">${IMG.map(([k,l,t])=>`<div><div class="drop" data-k="${k}"><img ${s[k]?`src="${U(s[k])}"`:'hidden'} alt=""><span>${t}<br>нажмите или перетащите</span><input type="file" accept="image/*" data-file="${k}"></div>
-  <label style="margin-top:.5rem">Подпись под фото<input data-f="${l}" placeholder="${t.replace(/ \(.*/,'')}" value="${esc(s[l])}"></label><button class="btn sm" data-clear="${k}">Убрать фото</button></div>`).join('')}</div></div>`).join('')+
+  <label style="margin-top:.5rem">Подпись под фото<input data-f="${l}" placeholder="${t.replace(/ \(.*/,'')}" value="${esc(s[l])}"></label><button class="btn sm" data-clear="${k}">Убрать фото</button></div>`).join('')}</div>
+  <div class="g2" style="margin-top:.9rem"><div><label>Видео под этим блоком (любой формат)<input type="file" accept="${VID}" data-svid></label>${s.vid?`<video controls preload="metadata" src="${U(s.vid)}"></video><button class="btn sm" data-clearvid>Убрать видео</button>`:''}</div>
+  <div><label>Или ссылка (YouTube, Vimeo, mp4)<input data-f="vurl" value="${esc(s.vurl)}"></label><label>Название видео<input data-f="vtitle" value="${esc(s.vtitle)}"></label></div></div></div>`).join('')+
   `<button class="btn" data-add="slides">+ Добавить слайд</button>`;
  if(tab==='videos')p.innerHTML=`<p class="help">Любой формат: mp4, mov, webm, mkv, avi… Если браузер не умеет его проигрывать, на сайте появится ссылка на скачивание. Лучше mp4 (H.264). Ссылки YouTube и Vimeo встраиваются.</p>`+
   D.videos.map((v,n)=>{const em=v.url&&embed(v.url);return`<div class="card" data-list="videos" data-id="${v.id}"><div class="row"><b>Видео ${n+1}</b><span class="sp2"></span>${btns}</div>
@@ -80,6 +83,7 @@ document.addEventListener('input',e=>{const t=e.target;
 function setImg(inp,f){const o=find(inp);if(!o||!f||!f.type.startsWith('image/'))return;const k=inp.dataset.file||inp.closest('.drop').dataset.k;o[k]=f;const im=inp.closest('.drop').querySelector('img');im.src=U(f);im.hidden=false;mark()}
 document.addEventListener('change',e=>{const t=e.target;
  if(t.dataset.file)setImg(t,t.files[0]);
+ if(t.dataset.svid!==undefined){const o=find(t);if(o&&t.files[0]){o.vid=t.files[0];mark();render()}}
  if(t.dataset.f&&t.tagName==='SELECT'){const o=find(t);if(o){o.anim=t.value;mark()}else{D.settings.anim=t.value;mark()}}
  if(t.dataset.vid!==undefined){[...t.files].forEach(f=>D.videos.push({id:uid(),title:f.name.replace(/\.[^.]+$/,''),blob:f}));mark();render()}
  if(t.id==='imp'&&t.files[0])importFile(t.files[0])});
@@ -91,6 +95,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button,lab
  if(t.dataset.add==='slides'){D.slides.push({id:uid(),title:'',caption:'',anim:''});mark();render()}
  if(t.dataset.add==='links'){D.links.push({id:uid(),label:'',url:'',blank:true});mark();render()}
  if(t.dataset.add==='vurl'){const u=$('#vurl').value.trim();if(!/^https?:\/\//.test(u))return alert('Введите ссылку, начиная с https://');D.videos.push({id:uid(),title:'',url:u});mark();render()}
+ if(t.dataset.clearvid!==undefined){find(t).vid=null;mark();render()}
  if(t.dataset.clear){const o=find(t);o[t.dataset.clear]=null;mark();render()}
  if(t.dataset.act){const c=t.closest('[data-list]'),L=D[c.dataset.list],n=L.findIndex(x=>x.id===c.dataset.id),a=t.dataset.act;
   if(a==='del'){if(!confirm('Удалить этот элемент?'))return;L.splice(n,1)}
@@ -109,14 +114,14 @@ const b2d=b=>new Promise(r=>{const f=new FileReader;f.onload=()=>r(f.result);f.r
 const d2b=async v=>typeof v==='string'&&v.startsWith('data:')?await (await fetch(v)).blob():v;
 async function exportFile(){
  const wv=$('#wv').checked,o={v:1,settings:D.settings,slides:[],videos:[],links:D.links};
- for(const s of D.slides){const n={...s};for(const[k]of IMG)if(s[k] instanceof Blob)n[k]=await b2d(s[k]);o.slides.push(n)}
+ for(const s of D.slides){const n={...s};for(const[k]of IMG)if(s[k] instanceof Blob)n[k]=await b2d(s[k]);if(s.vid instanceof Blob)n.vid=wv?await b2d(s.vid):null;o.slides.push(n)}
  for(const v of D.videos){const n={...v};if(v.blob instanceof Blob)n.blob=wv?await b2d(v.blob):null;if(n.blob||n.url)o.videos.push(n)}
  const d=new Date(),z=x=>String(x).padStart(2,'0'),name=`samarkand-copy-${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}.json`;
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'}));a.download=name;a.click()}
 async function importFile(f){
  if(!confirm('Загрузить копию в редактор? Текущие несохранённые изменения будут заменены. В браузере ничего не изменится, пока вы не нажмёте «Сохранить».'))return;
  try{const o=JSON.parse(await f.text());
-  for(const s of o.slides||[])for(const[k]of IMG)s[k]=await d2b(s[k]);
+  for(const s of o.slides||[]){for(const[k]of IMG)s[k]=await d2b(s[k]);s.vid=await d2b(s.vid)}
   for(const v of o.videos||[])v.blob=await d2b(v.blob);
   D={settings:{...DEF(),...o.settings},slides:o.slides||[],videos:o.videos||[],links:o.links||[]};mark();render()}
  catch(e){alert('Не получилось прочитать файл: '+e.message)}}
