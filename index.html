@@ -47,6 +47,28 @@ footer{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;padding:3rem 
 .fdesc b{display:block;color:var(--gold);font:600 19px/1.4 Manrope,sans-serif;margin-bottom:.4rem}.fdesc:empty{display:none}
 @media(max-width:700px){.fdesc{font-size:16px;padding:1rem}}
 .stage:not(.go) .fr{opacity:0}
+/* --- мобильная стабильность: боковые карточки больше не расширяют страницу --- */
+html,body{overflow-x:clip;max-width:100%}
+#gallery,.work{overflow-x:clip}
+.stage{overflow-x:clip;overflow-y:visible}
+.fr,.in{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.fr{will-change:transform}
+.fdesc{overflow-anchor:none}
+#bgfix{position:fixed;left:0;top:0;width:100%;height:100lvh;z-index:-1;pointer-events:none;transform:translateZ(0)}
+@media(hover:none){.in{transform:none!important}}
+/* --- золотая рамка описания: бегущая линия + мягкое свечение --- */
+@property --ang{syntax:'<angle>';inherits:false;initial-value:0deg}
+.fdesc{position:relative;border-radius:4px;box-shadow:0 0 18px rgba(212,175,55,.14),inset 0 0 22px rgba(212,175,55,.05);animation:fglow 3.6s ease-in-out infinite;transition:opacity .25s}
+.fdesc.sw{opacity:0}
+.fdesc::before{content:"";position:absolute;inset:-1px;padding:2px;border-radius:inherit;pointer-events:none;
+ background:conic-gradient(from var(--ang),transparent 0 62%,rgba(212,175,55,.35) 80%,#ffe9a0 96%,#fff7d6 100%);
+ -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+ mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);mask-composite:exclude;
+ filter:drop-shadow(0 0 5px rgba(255,214,102,.9));animation:fspin 4.2s linear infinite}
+@keyframes fspin{to{--ang:360deg}}
+@keyframes fglow{50%{box-shadow:0 0 30px rgba(212,175,55,.3),inset 0 0 26px rgba(212,175,55,.09)}}
+@media(prefers-reduced-motion:reduce){.fdesc,.fdesc::before{animation:none}}
+@media(max-width:700px){.fdesc{max-width:92vw;margin-top:1.1rem}}
 .wv{max-width:min(92vw,880px);margin:2.2rem auto 0;border:1px solid rgba(212,175,55,.25);padding:.7rem;background:rgba(0,0,0,.18)}
 .wv video,.wv iframe{width:100%;aspect-ratio:16/9;background:#000;border:0;display:block}
 .wv p{font:500 20px var(--serif);margin-top:.6rem}
@@ -65,6 +87,13 @@ async function getData(){
  return loadSite()}
 (async()=>{
 const D=await getData(),S=D.settings;applyTheme(S);document.title=S.title;
+/* фон — отдельный фиксированный слой, чтобы не двигался со страницей */
+(()=>{const g=e=>getComputedStyle(e),cands=[g(document.body),g(document.documentElement)];
+ const c=cands.find(x=>x.backgroundImage!=='none')||cands.find(x=>x.backgroundColor!=='rgba(0, 0, 0, 0)')||cands[0];
+ const b=document.createElement('div');b.id='bgfix';
+ Object.assign(b.style,{backgroundColor:c.backgroundColor,backgroundImage:c.backgroundImage,backgroundSize:c.backgroundSize==='auto'?'cover':c.backgroundSize,backgroundPosition:c.backgroundPosition,backgroundRepeat:c.backgroundRepeat});
+ document.body.prepend(b);
+ document.documentElement.style.background=c.backgroundColor;document.body.style.background='transparent'})();
 $('#sub').textContent=S.sub;$('#gt').textContent=S.gTitle;$('#vt').textContent=S.vTitle;
 /* ---------- золотой песок ---------- */
 function sand(){
@@ -123,7 +152,15 @@ slides.forEach(s=>{
   `<div class="stage" style="--an:${s.anim||S.anim}">`+[['l','left','ll','Вариант A'],['c','orig','ol','Оригинал'],['r','right','rl','Вариант B']].map(([p,k,l,d])=>
   `<figure class="fr" data-p="${p}" data-home="${p}" data-d="${esc(s[l])}"><div class="in">${s[k]?`<img src="${U(s[k])}" alt="" draggable="false">`:''}<span class="tag">${d}</span><i></i></div></figure>`).join('')+'</div>';
  const st=$('.stage',w),fd=document.createElement('div');fd.className='fdesc';st.after(fd);let moved=false,x0=null,y0=0;
- const sync=()=>{const t=($('.fr[data-p=c]',st).dataset.d||'').trim(),[a,...b]=t.split('\n'),rest=b.join('\n').trim();fd.innerHTML=!t?'':rest?`<b>${esc(a)}</b>${esc(rest)}`:esc(a)};sync();
+ const html=t=>{t=(t||'').trim();const [a,...b]=t.split('\n'),rest=b.join('\n').trim();return !t?'':rest?`<b>${esc(a)}</b>${esc(rest)}`:esc(a)};
+ let first=true;
+ const fit=()=>{const all=Array.from($$('.fr',st)).map(f=>html(f.dataset.d));if(!all.some(Boolean)){fd.style.minHeight='';return}
+  const cur=fd.innerHTML;let m=0;all.forEach(h=>{fd.innerHTML=h||'&nbsp;';m=Math.max(m,fd.offsetHeight)});fd.innerHTML=cur;fd.style.minHeight=m+'px';fd.style.boxSizing='border-box'};
+ const sync=()=>{const h=html($('.fr[data-p=c]',st).dataset.d);
+  if(first){first=false;fd.innerHTML=h;return}
+  fd.classList.add('sw');setTimeout(()=>{fd.innerHTML=h;fd.classList.remove('sw')},180)};
+ sync();addEventListener('resize',()=>{clearTimeout(fd._t);fd._t=setTimeout(fit,150)});
+ (document.fonts?document.fonts.ready:Promise.resolve()).then(fit);
  $$('.fr',st).forEach(f=>f.onclick=()=>{if(moved)return;const c=$('.fr[data-p=c]',st);
   if(f===c){const h=$('.fr[data-home=c]',st);if(h!==c)swap(h,c)}else swap(f,c);sync()});
  const dn=(x,y)=>{x0=x;y0=y},up=(x,y)=>{if(x0==null)return;const d=x-x0,v=y-y0;x0=null;if(Math.abs(d)>12){moved=true;setTimeout(()=>moved=false,150)}if(Math.abs(d)>50&&Math.abs(d)>Math.abs(v)){rot(st,d<0?1:-1);sync()}};
