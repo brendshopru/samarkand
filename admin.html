@@ -107,20 +107,20 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button,lab
  if(t.dataset.tab){tab=t.dataset.tab;render()}
  if(t.dataset.add==='slides'){D.slides.push({id:uid(),title:'',caption:'',anim:''});mark();render()}
  if(t.dataset.add==='links'){D.links.push({id:uid(),label:'',url:'',blank:true});mark();render()}
- if(t.dataset.add==='vurl'){const u=$('#vurl').value.trim();if(!/^https?:\/\//.test(u))return alert('Введите ссылку, начиная с https://');D.videos.push({id:uid(),title:'',url:u});mark();render()}
+ if(t.dataset.add==='vurl'){const u=$('#vurl').value.trim();if(!/^https?:\/\//.test(u))return say('Введите ссылку, начиная с https://');D.videos.push({id:uid(),title:'',url:u});mark();render()}
  if(t.dataset.clearvid!==undefined){find(t).vid=null;mark();render()}
  if(t.dataset.clear){const o=find(t);o[t.dataset.clear]=null;mark();render()}
  if(t.dataset.act){const c=t.closest('[data-list]'),L=D[c.dataset.list],n=L.findIndex(x=>x.id===c.dataset.id),a=t.dataset.act;
-  if(a==='del'){if(!confirm('Удалить этот элемент?'))return;L.splice(n,1)}
+  if(a==='del'){if(!await ask('Удалить этот элемент?'))return;L.splice(n,1)}
   if(a==='dup')L.splice(n+1,0,{...L[n],id:uid()});
   if(a==='up'&&n>0)[L[n-1],L[n]]=[L[n],L[n-1]];
   if(a==='down'&&n<L.length-1)[L[n+1],L[n]]=[L[n],L[n+1]];
   mark();render()}
  if(t.id==='exp')exportFile();
  if(t.id==='ghchk')ghRun(ghCheck);if(t.id==='ghpub')ghRun(ghPublish);if(t.id==='ghpull')ghRun(ghPull);
- if(t.id==='wipe'&&prompt('Для удаления всех данных введите слово УДАЛИТЬ')==='УДАЛИТЬ'){D={settings:DEF(),slides:[],videos:[],links:[]};mark();render();alert('Данные очищены в редакторе. Они удалятся из браузера, только когда вы нажмёте «Сохранить».')}});
+ if(t.id==='wipe'&&prompt('Для удаления всех данных введите слово УДАЛИТЬ')==='УДАЛИТЬ'){D={settings:DEF(),slides:[],videos:[],links:[]};mark();render();say('Данные очищены в редакторе. Они удалятся из браузера, только когда вы нажмёте «Сохранить».')}});
 /* сохранение только по нажатию кнопки или Ctrl+S */
-$('#save').onclick=async()=>{try{await DB.set('site',D);dirty=false;$('#save').disabled=true;$('#st').textContent='Сохранено в '+new Date().toLocaleTimeString()}catch(e){alert('Не удалось сохранить: '+e.message)}};
+$('#save').onclick=async()=>{try{await DB.set('site',D);dirty=false;$('#save').disabled=true;$('#st').textContent='Сохранено в '+new Date().toLocaleTimeString()}catch(e){say('Не удалось сохранить: '+e.message)}};
 addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();if(!$('#save').disabled)$('#save').click()}});
 addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 /* копия */
@@ -133,14 +133,18 @@ async function exportFile(){
  const d=new Date(),z=x=>String(x).padStart(2,'0'),name=`samarkand-copy-${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}.json`;
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'}));a.download=name;a.click()}
 async function importFile(f){
- if(!confirm('Загрузить копию в редактор? Текущие несохранённые изменения будут заменены. В браузере ничего не изменится, пока вы не нажмёте «Сохранить».'))return;
+ if(!await ask('Загрузить копию в редактор? Текущие несохранённые изменения будут заменены. В браузере ничего не изменится, пока вы не нажмёте «Сохранить».'))return;
  try{const o=JSON.parse(await f.text());
   for(const s of o.slides||[]){for(const[k]of IMG)s[k]=await d2b(s[k]);s.vid=await d2b(s.vid)}
   for(const v of o.videos||[])v.blob=await d2b(v.blob);
   D={settings:{...DEF(),...o.settings},slides:o.slides||[],videos:o.videos||[],links:o.links||[]};mark();render()}
- catch(e){alert('Не получилось прочитать файл: '+e.message)}}
+ catch(e){say('Не получилось прочитать файл: '+e.message)}}
 /* ---------- публикация на GitHub (только по нажатию кнопки) ---------- */
-const glog=t=>{GH.log+=(GH.log?'\n':'')+t;const e=$('#ghlog');if(e)e.textContent=GH.log};
+const glog=t=>{GH.log+=(GH.log?'\n':'')+t;const e=$('#ghlog');if(e)e.textContent=GH.log;$('#st').textContent=t};
+function say(t){$('#st').textContent=t;const d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;left:50%;bottom:1.2rem;transform:translateX(-50%);z-index:200;max-width:90vw;padding:.8rem 1.2rem;background:#2a2b2e;border:1px solid var(--gold);border-radius:4px;box-shadow:0 10px 40px #000a';document.body.append(d);setTimeout(()=>d.remove(),7000)}
+function ask(msg){return new Promise(ok=>{const d=document.createElement('div');d.style.cssText='position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:rgba(0,0,0,.65);padding:1rem';
+ d.innerHTML=`<div class="card" style="max-width:460px;background:#2a2b2e;margin:0"><p style="margin-bottom:1rem">${esc(msg)}</p><div class="row"><button class="btn" data-y>Да</button><button class="btn" data-n>Отмена</button></div></div>`;
+ document.body.append(d);d.onclick=e=>{const y=e.target.closest('[data-y]'),n=e.target.closest('[data-n]');if(y||n){d.remove();ok(!!y)}}})}
 const api=(p,o={})=>fetch(`https://api.github.com/repos/${GH.owner.trim()}/${GH.repo.trim()}/${p}`,{...o,headers:{Authorization:'Bearer '+GH.token.trim(),Accept:'application/vnd.github+json','Content-Type':'application/json'}});
 const gerr=async r=>{let m='';try{m=(await r.json()).message}catch(e){}return new Error(r.status+(m?': '+m:'')+(r.status===401?' (токен не подходит)':r.status===404?' (репозиторий не найден или у токена нет доступа)':r.status===403?' (нет права Contents: Read and write)':''))};
 const b64=async b=>(await b2d(b)).split(',')[1];
@@ -151,13 +155,13 @@ async function ghRun(fn){const bs=$$('#ghchk,#ghpub,#ghpull');bs.forEach(b=>b.di
 async function ghCheck(){if(!GH.token.trim())throw new Error('вставьте токен');const r=await api('');if(!r.ok)throw await gerr(r);const j=await r.json();
  glog(j.permissions&&j.permissions.push?'Доступ есть: можно публиковать в '+j.full_name:'Репозиторий найден, но записывать в него токену нельзя. Нужно право Contents: Read and write.')}
 async function ghPull(){const r=await fetch('data.json?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('на сайте ещё нет опубликованных данных (data.json)');
- if(!confirm('Загрузить данные с сайта в редактор? Несохранённые изменения будут заменены. В браузере ничего не сохранится, пока вы не нажмёте «Сохранить».'))return;
+ if(!await ask('Загрузить данные с сайта в редактор? Несохранённые изменения будут заменены. В браузере ничего не сохранится, пока вы не нажмёте «Сохранить».'))return;
  const o=await r.json();D={settings:{...DEF(),...o.settings},slides:o.slides||[],videos:o.videos||[],links:o.links||[]};mark();glog('Данные с сайта загружены в редактор.');render()}
 async function ghPublish(){
  if(!GH.token.trim()||!GH.owner.trim()||!GH.repo.trim())throw new Error('заполните аккаунт, репозиторий и токен');
  const jobs=[];D.slides.forEach(s=>['left','orig','right','vid'].forEach(k=>{if(s[k] instanceof Blob)jobs.push([s,k])}));D.videos.forEach(v=>{if(v.blob instanceof Blob)jobs.push([v,'blob'])});
  const big=jobs.find(([o,k])=>o[k].size>50*1048576);if(big)throw new Error(`файл «${big[0][big[1]].name}» больше 50 МБ. Сожмите его или вставьте ссылку YouTube.`);
- if(!confirm(`Опубликовать на сайт? Новых файлов для загрузки: ${jobs.length}. Прошлая версия data.json останется в папке backups.`)){glog('Отменено.');return}
+ if(!await ask(`Опубликовать на сайт? Новых файлов для загрузки: ${jobs.length}. Прошлая версия data.json останется в папке backups.`)){glog('Отменено.');return}
  let n=0;const br=GH.branch.trim()||'main';
  for(const[o,k]of jobs){const f=o[k];n++;glog(`Загрузка ${n} из ${jobs.length}: ${f.name||k}`);
   const ext=((f.name||'').split('.').pop()||'').toLowerCase().replace(/[^a-z0-9]/g,'')||(f.type.split('/')[1]||'bin').replace(/[^a-z0-9]/g,'');
@@ -171,7 +175,7 @@ async function ghPublish(){
  const out=JSON.stringify({v:2,settings:D.settings,slides:D.slides,videos:D.videos,links:D.links});
  const p=await api('contents/data.json',{method:'PUT',body:JSON.stringify({message:'Samarkand: публикация',content:u64(out),branch:br,...(sha?{sha}:{})})});if(!p.ok)throw await gerr(p);
  glog('Готово. Сайт обновится через 1–2 минуты.');
- if(confirm('Опубликовано. Сохранить текущее состояние и в этом браузере?'))$('#save').click()}
+ if(await ask('Опубликовано. Сохранить текущее состояние и в этом браузере?'))$('#save').click()}
 (async()=>{D=await loadSite();applyTheme(D.settings);$('#st').textContent='Всё сохранено';render();
- if(!D.slides.length&&!D.videos.length){try{const x=await fetch('data.json?v='+Date.now(),{cache:'no-store'});if(x.ok&&confirm('На сайте уже есть опубликованные данные. Загрузить их в редактор? (в браузере ничего не сохранится, пока вы не нажмёте «Сохранить»)')){const o=await x.json();D={settings:{...DEF(),...o.settings},slides:o.slides||[],videos:o.videos||[],links:o.links||[]};mark();render()}}catch(e){}}})();
+ if(!D.slides.length&&!D.videos.length){try{const x=await fetch('data.json?v='+Date.now(),{cache:'no-store'});if(x.ok&&await ask('На сайте уже есть опубликованные данные. Загрузить их в редактор? (в браузере ничего не сохранится, пока вы не нажмёте «Сохранить»)')){const o=await x.json();D={settings:{...DEF(),...o.settings},slides:o.slides||[],videos:o.videos||[],links:o.links||[]};mark();render()}}catch(e){}}})();
 </script></body></html>
