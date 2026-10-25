@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Samarkand — админка</title><link rel="stylesheet" href="base.css">
+<style>
+body{padding-bottom:5rem}
+header{position:sticky;top:0;z-index:30;display:flex;flex-wrap:wrap;align-items:center;gap:.8rem;padding:.8rem 1.2rem;background:rgba(30,31,33,.92);backdrop-filter:blur(8px);border-bottom:1px solid rgba(212,175,55,.25)}
+header h1{font:500 26px var(--serif);margin-right:auto}#st{font-size:13px;color:var(--mute)}
+.tabs{display:flex;gap:.4rem;flex-wrap:wrap;max-width:980px;margin:1.2rem auto 0;padding:0 1.2rem}
+.tabs .btn.on{background:rgba(212,175,55,.28);color:#f3dc8a}
+main{max-width:980px;margin:1.2rem auto;padding:0 1.2rem}
+.card{border:1px solid rgba(212,175,55,.25);background:rgba(0,0,0,.2);padding:1rem;margin-bottom:1.1rem}
+.row{display:flex;gap:.4rem;align-items:center;margin-bottom:.7rem}.row b{font:500 20px var(--serif)}.sp2{flex:1}
+label{display:block;font-size:13px;color:var(--mute);margin-bottom:.7rem}
+input,select,textarea{display:block;width:100%;margin-top:.25rem;padding:.55rem .7rem;background:rgba(0,0,0,.35);border:1px solid #4a4b4e;color:var(--ink);font:inherit;font-size:15px;border-radius:3px}
+input:focus,select:focus,textarea:focus{border-color:var(--gold);outline:0}
+input[type=color]{height:42px;padding:2px}input[type=range]{padding:0}input[type=checkbox]{display:inline;width:auto;margin-right:.5rem}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem}
+@media(max-width:700px){.g2,.g3{grid-template-columns:1fr}}
+.drop{position:relative;aspect-ratio:3/4;border:1px dashed rgba(212,175,55,.5);display:grid;place-items:center;text-align:center;color:var(--mute);overflow:hidden;background:rgba(0,0,0,.25);transition:.3s}
+.drop.ov{background:rgba(212,175,55,.15);border-style:solid}
+.drop img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.drop img[hidden]+span{display:block}
+.drop span{position:relative;font-size:13px}.drop img:not([hidden])+span{display:none}
+.drop input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;margin:0;height:100%}
+.sm{padding:.3em .8em;font-size:13px}
+video{width:100%;aspect-ratio:16/9;background:#000;margin-bottom:.7rem}
+.help{font-size:13px;color:var(--mute);margin-bottom:1rem}
+.danger{border-color:#a55;color:#e9a}
+</style></head><body>
+<header><h1>Samarkand · админка</h1><span id="st">Загрузка…</span>
+<a class="btn sm" href="index.html" target="_blank" rel="noopener">Открыть презентацию</a>
+<button class="btn" id="save" disabled>Сохранить</button></header>
+<nav class="tabs" id="tabs"></nav><main id="panel"></main>
+<script src="store.js"></script>
+<script>
+const TABS=[['main','Основное'],['slides','Слайды'],['videos','Видео'],['links','Ссылки'],['backup','Копия и данные']];
+const ANIMS=[['fan','Веер'],['rise','Подъём снизу'],['zoom','Наплыв с размытием'],['flip','Переворот']];
+const IMG=[['left','ll','Вариант A (слева)'],['orig','ol','Оригинал (центр)'],['right','rl','Вариант B (справа)']];
+let D,dirty=false,tab='main';
+const mark=()=>{dirty=true;$('#save').disabled=false;$('#st').textContent='Есть несохранённые изменения'};
+const fld=(k,l,t='text',x='')=>`<label>${l}<input type="${t}" data-k="${k}" value="${esc(D.settings[k])}" ${x}></label>`;
+const btns=`<button class="btn sm" data-act="up" title="Выше">↑</button><button class="btn sm" data-act="down" title="Ниже">↓</button><button class="btn sm" data-act="dup" title="Дублировать">Копия</button><button class="btn sm danger" data-act="del">Удалить</button>`;
+const animSel=(v,def)=>`<select data-f="anim">${def?'<option value="">Как в общих настройках</option>':''}${ANIMS.map(([k,n])=>`<option value="${k}"${v===k?' selected':''}>${n}</option>`).join('')}</select>`;
+const VID='video/*,.mkv,.avi,.mov,.wmv,.flv,.3gp,.m4v,.mpg,.mpeg,.ogv,.webm,.mp4';
+function render(){
+ $('#tabs').innerHTML=TABS.map(([k,n])=>`<button class="btn${k===tab?' on':''}" data-tab="${k}">${n}</button>`).join('');
+ const s=D.settings,p=$('#panel');
+ if(tab==='main')p.innerHTML=`<div class="card"><div class="g2">${fld('title','Слово из золотого песка (главный экран)')}${fld('sub','Подзаголовок под словом')}</div>
+ <div class="g2">${fld('gTitle','Название раздела с фото')}${fld('vTitle','Название раздела с видео')}</div>
+ <div class="g3">${fld('gold','Цвет золота','color')}<label>Густота песка: <b>${s.sand}</b><input type="range" min=".5" max="2" step=".1" data-k="sand" value="${s.sand}"></label>
+ <label>Зернистость штукатурки: <b>${s.grain}</b><input type="range" min="0" max="1" step=".05" data-k="grain" value="${s.grain}"></label></div>
+ <div class="g2"><label>Анимация появления фото по умолчанию${animSel(s.anim)}</label>${fld('auto','Автолистание, секунд (0 — выключено)','number','min="0" step="1"')}</div></div>
+ <p class="help">Слово песка лучше делать коротким. Изменения видны на сайте после нажатия «Сохранить» и обновления страницы презентации.</p>`;
+ if(tab==='slides')p.innerHTML=`<p class="help">В каждом слайде три фото: слева и справа два варианта, в центре оригинал. На сайте нажатие на боковое фото ставит его в центр. Файл можно перетащить на рамку.</p>`+
+  D.slides.map((s,n)=>`<div class="card" data-list="slides" data-id="${s.id}"><div class="row"><b>Слайд ${n+1}</b><span class="sp2"></span>${btns}</div>
+  <div class="g2"><label>Заголовок<input data-f="title" value="${esc(s.title)}"></label><label>Анимация входа${animSel(s.anim,1)}</label></div>
+  <label>Подпись<textarea rows="2" data-f="caption">${esc(s.caption)}</textarea></label>
+  <div class="g3">${IMG.map(([k,l,t])=>`<div><div class="drop" data-k="${k}"><img ${s[k]?`src="${U(s[k])}"`:'hidden'} alt=""><span>${t}<br>нажмите или перетащите</span><input type="file" accept="image/*" data-file="${k}"></div>
+  <label style="margin-top:.5rem">Подпись под фото<input data-f="${l}" placeholder="${t.replace(/ \(.*/,'')}" value="${esc(s[l])}"></label><button class="btn sm" data-clear="${k}">Убрать фото</button></div>`).join('')}</div></div>`).join('')+
+  `<button class="btn" data-add="slides">+ Добавить слайд</button>`;
+ if(tab==='videos')p.innerHTML=`<p class="help">Любой формат: mp4, mov, webm, mkv, avi… Если браузер не умеет его проигрывать, на сайте появится ссылка на скачивание. Лучше mp4 (H.264). Ссылки YouTube и Vimeo встраиваются.</p>`+
+  D.videos.map((v,n)=>{const em=v.url&&embed(v.url);return`<div class="card" data-list="videos" data-id="${v.id}"><div class="row"><b>Видео ${n+1}</b><span class="sp2"></span>${btns}</div>
+  ${em?`<iframe src="${em}" style="width:100%;aspect-ratio:16/9;border:0;margin-bottom:.7rem"></iframe>`:`<video controls preload="metadata" src="${U(v.blob)||esc(v.url)}"></video>`}
+  <label>Название<input data-f="title" value="${esc(v.title)}"></label>${v.url?`<label>Ссылка<input data-f="url" value="${esc(v.url)}"></label>`:''}</div>`}).join('')+
+  `<div class="row"><label class="btn" style="margin:0">+ Загрузить видео<input type="file" multiple accept="${VID}" data-vid hidden></label></div>
+  <div class="card"><label>Или вставьте ссылку (YouTube, Vimeo или прямой файл)<input id="vurl" placeholder="https://"></label><button class="btn sm" data-add="vurl">Добавить по ссылке</button></div>`;
+ if(tab==='links')p.innerHTML=`<p class="help">Ссылки показываются кнопками внизу сайта. При нажатии срабатывает золотая анимация.</p>`+
+  D.links.map((l,n)=>`<div class="card" data-list="links" data-id="${l.id}"><div class="row"><b>Ссылка ${n+1}</b><span class="sp2"></span>${btns}</div>
+  <div class="g2"><label>Текст кнопки<input data-f="label" value="${esc(l.label)}"></label><label>Адрес<input data-f="url" placeholder="https://" value="${esc(l.url)}"></label></div>
+  <label><input type="checkbox" data-f="blank" ${l.blank===false?'':'checked'}>Открывать в новой вкладке</label></div>`).join('')+`<button class="btn" data-add="links">+ Добавить ссылку</button>`;
+ if(tab==='backup'){p.innerHTML=`<div class="card"><p class="help">Данные хранятся в этом браузере (IndexedDB). Чтобы перенести презентацию на другой компьютер, скачайте копию и загрузите её там. Каждая копия сохраняется отдельным файлом с датой в названии, старые не перезаписываются.</p>
+  <label><input type="checkbox" id="wv" checked>Включить видео в копию (файл будет большим)</label>
+  <div class="row"><button class="btn" id="exp">Скачать копию</button><label class="btn" style="margin:0">Загрузить копию<input type="file" accept=".json" id="imp" hidden></label></div><p class="help" id="est"></p></div>
+  <div class="card"><p class="help">Полная очистка удаляет сохранённые слайды, видео и ссылки из этого браузера. Сначала скачайте копию.</p><button class="btn danger" id="wipe">Очистить всё…</button></div>`;
+  navigator.storage?.estimate?.().then(e=>$('#est').textContent=`Занято в браузере: ${(e.usage/1048576).toFixed(1)} МБ`)}}
+const find=el=>{const c=el.closest('[data-list]');return c&&D[c.dataset.list].find(x=>x.id===c.dataset.id)};
+document.addEventListener('input',e=>{const t=e.target;
+ if(t.dataset.k){D.settings[t.dataset.k]=t.type==='number'||t.type==='range'?+t.value:t.value;if(t.type==='range')t.previousSibling.textContent=t.value;mark()}
+ else if(t.dataset.f){const o=find(t);if(o){o[t.dataset.f]=t.type==='checkbox'?t.checked:t.value;mark()}}});
+function setImg(inp,f){const o=find(inp);if(!o||!f||!f.type.startsWith('image/'))return;const k=inp.dataset.file||inp.closest('.drop').dataset.k;o[k]=f;const im=inp.closest('.drop').querySelector('img');im.src=U(f);im.hidden=false;mark()}
+document.addEventListener('change',e=>{const t=e.target;
+ if(t.dataset.file)setImg(t,t.files[0]);
+ if(t.dataset.f&&t.tagName==='SELECT'){const o=find(t);if(o){o.anim=t.value;mark()}else{D.settings.anim=t.value;mark()}}
+ if(t.dataset.vid!==undefined){[...t.files].forEach(f=>D.videos.push({id:uid(),title:f.name.replace(/\.[^.]+$/,''),blob:f}));mark();render()}
+ if(t.id==='imp'&&t.files[0])importFile(t.files[0])});
+document.addEventListener('dragover',e=>{const d=e.target.closest('.drop');if(d){e.preventDefault();d.classList.add('ov')}});
+document.addEventListener('dragleave',e=>e.target.closest?.('.drop')?.classList.remove('ov'));
+document.addEventListener('drop',e=>{const d=e.target.closest('.drop');if(d){e.preventDefault();d.classList.remove('ov');setImg(d.querySelector('input'),e.dataTransfer.files[0])}});
+document.addEventListener('click',async e=>{const t=e.target.closest('button,label');if(!t)return;
+ if(t.dataset.tab){tab=t.dataset.tab;render()}
+ if(t.dataset.add==='slides'){D.slides.push({id:uid(),title:'',caption:'',anim:''});mark();render()}
+ if(t.dataset.add==='links'){D.links.push({id:uid(),label:'',url:'',blank:true});mark();render()}
+ if(t.dataset.add==='vurl'){const u=$('#vurl').value.trim();if(!/^https?:\/\//.test(u))return alert('Введите ссылку, начиная с https://');D.videos.push({id:uid(),title:'',url:u});mark();render()}
+ if(t.dataset.clear){const o=find(t);o[t.dataset.clear]=null;mark();render()}
+ if(t.dataset.act){const c=t.closest('[data-list]'),L=D[c.dataset.list],n=L.findIndex(x=>x.id===c.dataset.id),a=t.dataset.act;
+  if(a==='del'){if(!confirm('Удалить этот элемент?'))return;L.splice(n,1)}
+  if(a==='dup')L.splice(n+1,0,{...L[n],id:uid()});
+  if(a==='up'&&n>0)[L[n-1],L[n]]=[L[n],L[n-1]];
+  if(a==='down'&&n<L.length-1)[L[n+1],L[n]]=[L[n],L[n+1]];
+  mark();render()}
+ if(t.id==='exp')exportFile();
+ if(t.id==='wipe'&&prompt('Для удаления всех данных введите слово УДАЛИТЬ')==='УДАЛИТЬ'){D={settings:DEF(),slides:[],videos:[],links:[]};mark();render();alert('Данные очищены в редакторе. Они удалятся из браузера, только когда вы нажмёте «Сохранить».')}});
+/* сохранение только по нажатию кнопки или Ctrl+S */
+$('#save').onclick=async()=>{try{await DB.set('site',D);dirty=false;$('#save').disabled=true;$('#st').textContent='Сохранено в '+new Date().toLocaleTimeString()}catch(e){alert('Не удалось сохранить: '+e.message)}};
+addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();if(!$('#save').disabled)$('#save').click()}});
+addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+/* копия */
+const b2d=b=>new Promise(r=>{const f=new FileReader;f.onload=()=>r(f.result);f.readAsDataURL(b)});
+const d2b=async v=>typeof v==='string'&&v.startsWith('data:')?await (await fetch(v)).blob():v;
+async function exportFile(){
+ const wv=$('#wv').checked,o={v:1,settings:D.settings,slides:[],videos:[],links:D.links};
+ for(const s of D.slides){const n={...s};for(const[k]of IMG)if(s[k] instanceof Blob)n[k]=await b2d(s[k]);o.slides.push(n)}
+ for(const v of D.videos){const n={...v};if(v.blob instanceof Blob)n.blob=wv?await b2d(v.blob):null;if(n.blob||n.url)o.videos.push(n)}
+ const d=new Date(),z=x=>String(x).padStart(2,'0'),name=`samarkand-copy-${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}.json`;
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(o)],{type:'application/json'}));a.download=name;a.click()}
+async function importFile(f){
+ if(!confirm('Загрузить копию в редактор? Текущие несохранённые изменения будут заменены. В браузере ничего не изменится, пока вы не нажмёте «Сохранить».'))return;
+ try{const o=JSON.parse(await f.text());
+  for(const s of o.slides||[])for(const[k]of IMG)s[k]=await d2b(s[k]);
+  for(const v of o.videos||[])v.blob=await d2b(v.blob);
+  D={settings:{...DEF(),...o.settings},slides:o.slides||[],videos:o.videos||[],links:o.links||[]};mark();render()}
+ catch(e){alert('Не получилось прочитать файл: '+e.message)}}
+(async()=>{D=await loadSite();applyTheme(D.settings);$('#st').textContent='Всё сохранено';render()})();
+</script></body></html>

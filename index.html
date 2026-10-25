@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Samarkand</title><link rel="stylesheet" href="base.css">
+<style>
+nav{position:fixed;top:0;right:0;z-index:20;display:flex;gap:1.6rem;padding:1.2rem 1.6rem;font-size:14px;letter-spacing:.04em}
+#hero{position:relative;height:100svh;min-height:520px}
+#sand{position:absolute;inset:0;width:100%;height:100%}
+#sub{position:absolute;left:0;right:0;top:67%;text-align:center;font:500 clamp(18px,2.4vw,28px)/1.3 var(--serif);color:var(--mute);letter-spacing:.14em;pointer-events:none}
+.hint{position:absolute;bottom:1.6rem;left:50%;width:1px;height:54px;background:linear-gradient(var(--gold),transparent);animation:hint 2.2s infinite}
+@keyframes hint{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+section.s{padding:7rem 1.2rem 4rem;max-width:1300px;margin:auto}
+h2{font:500 clamp(34px,5vw,56px)/1.1 var(--serif);text-align:center;letter-spacing:.03em}
+.note{text-align:center;color:var(--mute);font-size:13px;margin-top:.4rem}
+#stage{position:relative;height:min(74vh,700px);margin-top:2rem;perspective:1500px;touch-action:pan-y;user-select:none;--mx:0;--my:0}
+.fr{--w:min(40vw,330px);--x:0;--s:1;--r:0deg;position:absolute;left:50%;top:46%;width:var(--w);cursor:pointer;
+ transform:translate(-50%,-50%) translateX(var(--x)) scale(var(--s)) rotateY(var(--r));
+ transition:transform 1s cubic-bezier(.2,.8,.2,1),filter .8s;animation:var(--an,fan) 1.1s cubic-bezier(.2,.8,.2,1) backwards}
+.fr[data-p=l]{--x:-66%;--s:.76;--r:24deg;z-index:1;filter:brightness(.65)}
+.fr[data-p=r]{--x:66%;--s:.76;--r:-24deg;z-index:1;filter:brightness(.65)}
+.fr[data-p=c]{z-index:3;--w:min(52vw,400px)}
+.fr[data-p=l]:hover,.fr[data-p=r]:hover{filter:brightness(.9)}
+.in{position:relative;aspect-ratio:3/4;overflow:hidden;border-radius:3px;border:1px solid rgba(212,175,55,.4);box-shadow:0 30px 60px rgba(0,0,0,.55),0 0 0 6px rgba(0,0,0,.18);
+ transform:rotateX(calc(var(--my)*-5deg)) rotateY(calc(var(--mx)*6deg));transition:transform .3s}
+.in img{width:100%;height:100%;object-fit:cover;display:block}
+[data-p=c] .in img{animation:kb 16s ease-in-out infinite alternate}
+@keyframes kb{to{transform:scale(1.09)}}
+.in i{position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,235,170,.35) 50%,transparent 65%);transform:translateX(-120%);animation:sh 1.6s .7s ease-out forwards}
+@keyframes sh{to{transform:translateX(120%)}}
+.fr figcaption{text-align:center;margin-top:.9rem;font:500 17px var(--serif);color:var(--mute);letter-spacing:.08em}
+[data-p=c] figcaption{color:var(--gold)}
+@keyframes fan{from{opacity:0;transform:translate(-50%,-50%) translateX(0) scale(.5) rotateY(80deg)}}
+@keyframes rise{from{opacity:0;transform:translate(-50%,calc(-50% + 190px)) translateX(var(--x)) scale(var(--s)) rotateY(var(--r))}}
+@keyframes zoom{from{opacity:0;filter:blur(18px);transform:translate(-50%,-50%) translateX(var(--x)) scale(1.9) rotateY(var(--r))}}
+@keyframes flip{from{opacity:0;transform:translate(-50%,-50%) translateX(var(--x)) scale(var(--s)) rotateY(200deg)}}
+.fr[data-p=l]{animation-delay:.16s}.fr[data-p=r]{animation-delay:.3s}
+#cap{text-align:center;max-width:620px;margin:1rem auto 0;min-height:5.5rem;animation:fd .8s .3s backwards}
+@keyframes fd{from{opacity:0;transform:translateY(10px)}}
+#cap b{display:block;font:500 28px var(--serif)}#cap span{color:var(--mute)}
+.ctl{display:flex;justify-content:center;align-items:center;gap:1.2rem;margin-top:1rem}
+.ar{width:46px;height:46px;border-radius:50%;padding:0;font-size:20px}
+.dots{display:flex;gap:.55rem}.dots i{width:7px;height:7px;border-radius:50%;background:#555;cursor:pointer;transition:.4s}.dots i.on{background:var(--gold);box-shadow:0 0 10px var(--gold);transform:scale(1.4)}
+#cnt{font:500 18px var(--serif);color:var(--mute);min-width:70px;text-align:center}
+#vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));gap:1.6rem;margin-top:2.4rem}
+.vc{border:1px solid rgba(212,175,55,.25);padding:.7rem;background:rgba(0,0,0,.18);transition:.4s}
+.vc:hover{border-color:var(--gold);box-shadow:0 0 30px rgba(212,175,55,.15)}
+.vc video,.vc iframe{width:100%;aspect-ratio:16/9;background:#000;border:0;display:block}
+.vc p{font:500 20px var(--serif);margin-top:.6rem}
+footer{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;padding:3rem 1rem 5rem}
+:fullscreen #gallery{display:flex;flex-direction:column;justify-content:center;background:var(--bg);max-width:none}
+</style></head><body>
+<nav id="nav"></nav>
+<header id="hero"><canvas id="sand"></canvas><p id="sub"></p><div class="hint"></div></header>
+<section class="s" id="gallery"><h2 id="gt"></h2><p class="note" id="demo" hidden>Это демо-слайд. Свои фото — в <a href="admin.html">админке</a>.</p>
+<div id="stage"></div><div id="cap"></div>
+<div class="ctl"><button class="btn ar" id="pv" aria-label="Назад">‹</button><div class="dots" id="dots"></div><span id="cnt"></span><button class="btn ar" id="nx" aria-label="Вперёд">›</button><button class="btn" id="fs">На весь экран</button></div></section>
+<section class="s" id="videos" hidden><h2 id="vt"></h2><div id="vgrid"></div></section>
+<footer id="foot"></footer>
+<script src="store.js"></script>
+<script>
+(async()=>{
+const D=await loadSite(),S=D.settings;applyTheme(S);document.title=S.title;
+$('#sub').textContent=S.sub;$('#gt').textContent=S.gTitle;$('#vt').textContent=S.vTitle;
+/* ---------- золотой песок ---------- */
+function sand(){
+ const cv=$('#sand'),c=cv.getContext('2d'),dpr=Math.min(devicePixelRatio||1,2),calm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+ let W,H,P=[],G=[],mx=-999,my=-999,t0=performance.now(),run=true;
+ const hex=S.gold.replace('#',''),rgb=[0,2,4].map(i=>parseInt(hex.substr(i,2),16));
+ const pal=[-.45,-.2,0,.25,.55].map(f=>'rgb('+rgb.map(v=>Math.round(f<0?v*(1+f):v+(255-v)*f)).join()+')');
+ function build(){
+  const r=cv.parentNode.getBoundingClientRect();W=Math.floor(r.width);H=Math.floor(r.height);cv.width=W*dpr;cv.height=H*dpr;c.setTransform(dpr,0,0,dpr,0,0);
+  const o=document.createElement('canvas');o.width=W;o.height=H;const x=o.getContext('2d');
+  let fs=Math.min(W/(S.title.length*.5),H*.34),f=()=>x.font=`600 ${fs}px "Cormorant Garamond",Georgia,serif`;f();
+  const w=x.measureText(S.title).width;if(w>W*.9){fs*=W*.9/w;f()}
+  x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.fillText(S.title,W/2,H*.46);
+  const gap=Math.max(2,(W<700?3.4:2.5)/S.sand),d=x.getImageData(0,0,W,H).data,T=[];
+  for(let y=0;y<H;y+=gap)for(let X=0;X<W;X+=gap){const px=X+Math.random()*gap|0,py=y+Math.random()*gap|0;if(d[(py*W+px)*4+3]>128)T.push([px,py])}
+  P=T.map((q,i)=>{const p=P[i]||{x:q[0]+(Math.random()-.5)*80,y:-Math.random()*H*.7-20,vx:0,vy:0};
+   Object.assign(p,{tx:q[0],ty:q[1],k:Math.floor(Math.random()*5),s:1.2+Math.random()*1.3,ph:Math.random()*6.28,dl:calm?0:(q[0]/W)*.9+Math.random()*.7});
+   if(calm){p.x=q[0];p.y=q[1]}return p});
+  G=Array.from({length:Math.round(W/12)},()=>({x:Math.random()*W,y:Math.random()*H,v:.15+Math.random()*.4,s:.8+Math.random()*1.2,k:Math.floor(Math.random()*5)}));
+ }
+ function frame(now){
+  if(!run)return;const t=(now-t0)/1000;c.clearRect(0,0,W,H);
+  const B=[[],[],[],[],[]];
+  for(const p of P){
+   if(t>p.dl){const dx=p.tx-p.x,dy=p.ty-p.y;p.vx+=dx*.018;p.vy+=dy*.018;p.vx*=.86;p.vy*=.86}else p.vy+=.35;
+   const mdx=p.x-mx,mdy=p.y-my,m=mdx*mdx+mdy*mdy;if(m<9000){const q=Math.sqrt(m)||1,f=(95-q)/95*3.2;p.vx+=mdx/q*f;p.vy+=mdy/q*f}
+   p.x+=p.vx;p.y+=p.vy;B[p.k].push(p.x+Math.sin(t*2+p.ph)*.35,p.y+Math.cos(t*1.7+p.ph)*.35,p.s)}
+  for(const g of G){g.y+=g.v;g.x+=Math.sin(t+g.y*.02)*.2;if(g.y>H){g.y=-4;g.x=Math.random()*W}B[g.k].push(g.x,g.y,g.s*.8)}
+  c.globalAlpha=1;B.forEach((a,k)=>{c.fillStyle=pal[k];for(let i=0;i<a.length;i+=3)c.fillRect(a[i],a[i+1],a[i+2],a[i+2])});
+  requestAnimationFrame(frame)}
+ const hero=cv.parentNode;
+ hero.addEventListener('pointermove',e=>{const r=cv.getBoundingClientRect();mx=e.clientX-r.left;my=e.clientY-r.top});
+ hero.addEventListener('pointerleave',()=>mx=my=-999);
+ new IntersectionObserver(([e])=>{if(e.isIntersecting&&!run){run=true;requestAnimationFrame(frame)}else if(!e.isIntersecting)run=false}).observe(hero);
+ let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(build,200)});
+ (document.fonts?document.fonts.load('600 80px "Cormorant Garamond"').catch(()=>{}):Promise.resolve()).then(()=>{build();requestAnimationFrame(frame)});
+}
+sand();
+/* ---------- галерея ---------- */
+const svg=(h,t)=>'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${h},35%,38%)"/><stop offset="1" stop-color="hsl(${h+30},40%,12%)"/></linearGradient></defs><rect width="600" height="800" fill="url(#g)"/><circle cx="300" cy="330" r="120" fill="none" stroke="#d4af37" stroke-width="2"/><text x="300" y="690" fill="#d4af37" font-family="Georgia" font-size="40" text-anchor="middle">${t}</text></svg>`);
+const demo=!D.slides.length;
+const slides=demo?[{title:'Демо-слайд',caption:'Листайте свайпом, стрелками или кнопками. Нажмите на боковое фото, чтобы поставить его в центр.',left:svg(200,'Вариант A'),orig:svg(35,'Оригинал'),right:svg(300,'Вариант B')}]:D.slides;
+$('#demo').hidden=!demo;
+let i=0,tm,moved=false;const st=$('#stage');
+$('#dots').innerHTML=slides.map((_,k)=>`<i data-k="${k}"></i>`).join('');
+function swap(a,b){const t=a.dataset.p;a.dataset.p=b.dataset.p;b.dataset.p=t}
+function show(n){
+ i=(n+slides.length)%slides.length;const s=slides[i];
+ st.innerHTML=[['l','left','ll','Вариант A'],['c','orig','ol','Оригинал'],['r','right','rl','Вариант B']].map(([p,k,l,d])=>
+  `<figure class="fr" data-p="${p}" data-home="${p}" style="--an:${s.anim||S.anim}"><div class="in">${s[k]?`<img src="${U(s[k])}" alt="" draggable="false">`:''}<i></i></div><figcaption>${esc(s[l]||d)}</figcaption></figure>`).join('');
+ $$('.fr',st).forEach(f=>f.onclick=()=>{if(moved)return;const c=$('.fr[data-p=c]',st);
+  if(f===c){const h=$('.fr[data-home=c]',st);if(h!==c)swap(h,c)}else swap(f,c)});
+ const cp=$('#cap');cp.innerHTML=`<b>${esc(s.title)}</b><span>${esc(s.caption)}</span>`;cp.style.animation='none';cp.offsetHeight;cp.style.animation='';
+ $('#cnt').textContent=String(i+1).padStart(2,'0')+' / '+String(slides.length).padStart(2,'0');
+ $$('#dots i').forEach((d,k)=>d.classList.toggle('on',k===i));
+ clearInterval(tm);if(S.auto>0&&slides.length>1)tm=setInterval(()=>show(i+1),S.auto*1000)}
+$('#pv').onclick=()=>show(i-1);$('#nx').onclick=()=>show(i+1);
+$('#dots').onclick=e=>{const k=e.target.dataset.k;if(k!=null)show(+k)};
+$('#fs').onclick=()=>document.fullscreenElement?document.exitFullscreen():$('#gallery').requestFullscreen?.();
+addEventListener('keydown',e=>{if(/INPUT|TEXTAREA/.test(e.target.tagName))return;if(e.key==='ArrowRight')show(i+1);if(e.key==='ArrowLeft')show(i-1)});
+let x0=0;st.addEventListener('pointerdown',e=>x0=e.clientX);
+st.addEventListener('pointerup',e=>{const d=e.clientX-x0;if(Math.abs(d)>12){moved=true;setTimeout(()=>moved=false,80)}if(Math.abs(d)>60)show(i+(d<0?1:-1))});
+st.addEventListener('pointermove',e=>{const r=st.getBoundingClientRect();st.style.setProperty('--mx',((e.clientX-r.left)/r.width-.5)*2);st.style.setProperty('--my',((e.clientY-r.top)/r.height-.5)*2)});
+let wl=0;st.addEventListener('wheel',e=>{if(Math.abs(e.deltaX)>40&&Date.now()-wl>600){wl=Date.now();show(i+(e.deltaX>0?1:-1))}},{passive:true});
+new IntersectionObserver(([e])=>{if(e.isIntersecting&&!st.dataset.on){st.dataset.on=1;show(0)}},{threshold:.2}).observe(st);
+/* ---------- видео ---------- */
+if(D.videos.length){$('#videos').hidden=false;
+ $('#vgrid').append(...D.videos.map(v=>{const d=document.createElement('div');d.className='vc';const em=v.url&&embed(v.url);
+  if(em)d.innerHTML=`<iframe src="${em}" allowfullscreen loading="lazy"></iframe>`;
+  else{const el=document.createElement('video');el.controls=true;el.preload='metadata';el.playsInline=true;el.src=U(v.blob)||v.url;
+   el.onerror=()=>{const a=document.createElement('a');a.href=el.src;a.download=v.title||'video';a.textContent='Формат не воспроизводится в браузере — скачать файл';a.style.cssText='display:block;padding:2rem;text-align:center';el.replaceWith(a)};d.append(el)}
+  d.insertAdjacentHTML('beforeend',`<p>${esc(v.title)}</p>`);return d}))}
+/* ---------- навигация и ссылки ---------- */
+$('#nav').innerHTML=`<a href="#gallery">${esc(S.gTitle)}</a>`+(D.videos.length?`<a href="#videos">${esc(S.vTitle)}</a>`:'');
+$('#foot').innerHTML=D.links.map(l=>`<a class="btn" href="${esc(l.url)}"${l.blank===false?'':' target="_blank" rel="noopener"'}>${esc(l.label||l.url)}</a>`).join('');
+})();
+</script></body></html>
