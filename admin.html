@@ -33,10 +33,14 @@ video{width:100%;aspect-ratio:16/9;background:#000;margin-bottom:.7rem}
 <nav class="tabs" id="tabs"></nav><main id="panel"></main>
 <script src="store.js"></script>
 <script>
-const TABS=[['main','Основное'],['slides','Слайды'],['videos','Видео'],['links','Ссылки'],['backup','Копия и данные']];
+const TABS=[['main','Основное'],['slides','Слайды'],['videos','Видео'],['links','Ссылки'],['gh','Публикация на сайт'],['backup','Копия и данные']];
 const ANIMS=[['fan','Веер'],['rise','Подъём снизу'],['zoom','Наплыв с размытием'],['flip','Переворот']];
 const IMG=[['left','ll','Вариант A (слева)'],['orig','ol','Оригинал (центр)'],['right','rl','Вариант B (справа)']];
-let D,dirty=false,tab='main';
+let D,dirty=false,tab='main';const cache={};
+const UU=v=>typeof v==='string'&&cache[v]?URL.createObjectURL(cache[v]):U(v);
+let GH={owner:'',repo:'samarkand',branch:'main',token:'',rem:false,log:''};
+if(location.hostname.endsWith('.github.io')){GH.owner=location.hostname.split('.')[0];GH.repo=location.pathname.split('/')[1]||GH.repo}
+try{Object.assign(GH,JSON.parse(localStorage.getItem('gh')||'{}'))}catch(e){}
 const mark=()=>{dirty=true;$('#save').disabled=false;$('#st').textContent='Есть несохранённые изменения'};
 const fld=(k,l,t='text',x='')=>`<label>${l}<input type="${t}" data-k="${k}" value="${esc(D.settings[k])}" ${x}></label>`;
 const btns=`<button class="btn sm" data-act="up" title="Выше">↑</button><button class="btn sm" data-act="down" title="Ниже">↓</button><button class="btn sm" data-act="dup" title="Дублировать">Копия</button><button class="btn sm danger" data-act="del">Удалить</button>`;
@@ -56,14 +60,14 @@ function render(){
   D.slides.map((s,n)=>`<div class="card" data-list="slides" data-id="${s.id}"><div class="row"><b>Слайд ${n+1}</b><span class="sp2"></span>${btns}</div>
   <div class="g2"><label>Заголовок<input data-f="title" value="${esc(s.title)}"></label><label>Анимация входа${animSel(s.anim,1)}</label></div>
   <label>Подпись<textarea rows="2" data-f="caption">${esc(s.caption)}</textarea></label>
-  <div class="g3">${IMG.map(([k,l,t])=>`<div><div class="drop" data-k="${k}"><img ${s[k]?`src="${U(s[k])}"`:'hidden'} alt=""><span>${t}<br>нажмите или перетащите</span><input type="file" accept="image/*" data-file="${k}"></div>
+  <div class="g3">${IMG.map(([k,l,t])=>`<div><div class="drop" data-k="${k}"><img ${s[k]?`src="${UU(s[k])}"`:'hidden'} alt=""><span>${t}<br>нажмите или перетащите</span><input type="file" accept="image/*" data-file="${k}"></div>
   <label style="margin-top:.5rem">Подпись под фото<input data-f="${l}" placeholder="${t.replace(/ \(.*/,'')}" value="${esc(s[l])}"></label><button class="btn sm" data-clear="${k}">Убрать фото</button></div>`).join('')}</div>
-  <div class="g2" style="margin-top:.9rem"><div><label>Видео под этим блоком (любой формат)<input type="file" accept="${VID}" data-svid></label>${s.vid?`<video controls preload="metadata" src="${U(s.vid)}"></video><button class="btn sm" data-clearvid>Убрать видео</button>`:''}</div>
+  <div class="g2" style="margin-top:.9rem"><div><label>Видео под этим блоком (любой формат)<input type="file" accept="${VID}" data-svid></label>${s.vid?`<video controls preload="metadata" src="${UU(s.vid)}"></video><button class="btn sm" data-clearvid>Убрать видео</button>`:''}</div>
   <div><label>Или ссылка (YouTube, Vimeo, mp4)<input data-f="vurl" value="${esc(s.vurl)}"></label><label>Название видео<input data-f="vtitle" value="${esc(s.vtitle)}"></label></div></div></div>`).join('')+
   `<button class="btn" data-add="slides">+ Добавить слайд</button>`;
  if(tab==='videos')p.innerHTML=`<p class="help">Любой формат: mp4, mov, webm, mkv, avi… Если браузер не умеет его проигрывать, на сайте появится ссылка на скачивание. Лучше mp4 (H.264). Ссылки YouTube и Vimeo встраиваются.</p>`+
   D.videos.map((v,n)=>{const em=v.url&&embed(v.url);return`<div class="card" data-list="videos" data-id="${v.id}"><div class="row"><b>Видео ${n+1}</b><span class="sp2"></span>${btns}</div>
-  ${em?`<iframe src="${em}" style="width:100%;aspect-ratio:16/9;border:0;margin-bottom:.7rem"></iframe>`:`<video controls preload="metadata" src="${U(v.blob)||esc(v.url)}"></video>`}
+  ${em?`<iframe src="${em}" style="width:100%;aspect-ratio:16/9;border:0;margin-bottom:.7rem"></iframe>`:`<video controls preload="metadata" src="${UU(v.blob)||esc(v.url)}"></video>`}
   <label>Название<input data-f="title" value="${esc(v.title)}"></label>${v.url?`<label>Ссылка<input data-f="url" value="${esc(v.url)}"></label>`:''}</div>`}).join('')+
   `<div class="row"><label class="btn" style="margin:0">+ Загрузить видео<input type="file" multiple accept="${VID}" data-vid hidden></label></div>
   <div class="card"><label>Или вставьте ссылку (YouTube, Vimeo или прямой файл)<input id="vurl" placeholder="https://"></label><button class="btn sm" data-add="vurl">Добавить по ссылке</button></div>`;
@@ -71,6 +75,14 @@ function render(){
   D.links.map((l,n)=>`<div class="card" data-list="links" data-id="${l.id}"><div class="row"><b>Ссылка ${n+1}</b><span class="sp2"></span>${btns}</div>
   <div class="g2"><label>Текст кнопки<input data-f="label" value="${esc(l.label)}"></label><label>Адрес<input data-f="url" placeholder="https://" value="${esc(l.url)}"></label></div>
   <label><input type="checkbox" data-f="blank" ${l.blank===false?'':'checked'}>Открывать в новой вкладке</label></div>`).join('')+`<button class="btn" data-add="links">+ Добавить ссылку</button>`;
+ if(tab==='gh')p.innerHTML=`<div class="card"><p class="help"><b>Один раз получите токен</b> (ключ, который разрешает админке записывать файлы в ваш репозиторий):<br>GitHub → ваш аватар → Settings → Developer settings → Personal access tokens → <b>Fine-grained tokens</b> → Generate new token. Укажите название и срок, в Repository access выберите <b>Only select repositories</b> и репозиторий сайта, в Permissions → Repository permissions → <b>Contents: Read and write</b>. Нажмите Generate и скопируйте токен (начинается с github_pat_).</p>
+ <p class="help">Токен даёт доступ к вашему репозиторию: никому не показывайте. Он нигде не сохраняется, пока вы сами не поставите галочку «Запомнить».</p>
+ <div class="g3"><label>Аккаунт GitHub<input data-gh="owner" value="${esc(GH.owner)}"></label><label>Репозиторий<input data-gh="repo" value="${esc(GH.repo)}"></label><label>Ветка<input data-gh="branch" value="${esc(GH.branch)}"></label></div>
+ <label>Токен<input type="password" data-gh="token" autocomplete="off" value="${esc(GH.token)}"></label>
+ <label><input type="checkbox" data-gh="rem" ${GH.rem?'checked':''}>Запомнить токен в этом браузере (только на своём устройстве)</label>
+ <div class="row" style="flex-wrap:wrap"><button class="btn" id="ghchk">Проверить доступ</button><button class="btn" id="ghpub">Опубликовать на сайт</button><button class="btn" id="ghpull">Загрузить с сайта в редактор</button></div>
+ <p class="help">«Опубликовать» загружает новые фото и видео в папку media и обновляет data.json. Предыдущая версия data.json сохраняется в папке backups, ничего не стирается. Файлы больше 50 МБ не загружаются: для длинных видео вставляйте ссылку YouTube. Сайт обновится через 1–2 минуты. Посмотреть несохранённое можно по ссылке <a href="index.html?local" target="_blank" rel="noopener">index.html?local</a> в этом браузере.</p>
+ <pre class="help" id="ghlog" style="white-space:pre-wrap">${esc(GH.log)}</pre></div>`;
  if(tab==='backup'){p.innerHTML=`<div class="card"><p class="help">Данные хранятся в этом браузере (IndexedDB). Чтобы перенести презентацию на другой компьютер, скачайте копию и загрузите её там. Каждая копия сохраняется отдельным файлом с датой в названии, старые не перезаписываются.</p>
   <label><input type="checkbox" id="wv" checked>Включить видео в копию (файл будет большим)</label>
   <div class="row"><button class="btn" id="exp">Скачать копию</button><label class="btn" style="margin:0">Загрузить копию<input type="file" accept=".json" id="imp" hidden></label></div><p class="help" id="est"></p></div>
@@ -79,8 +91,9 @@ function render(){
 const find=el=>{const c=el.closest('[data-list]');return c&&D[c.dataset.list].find(x=>x.id===c.dataset.id)};
 document.addEventListener('input',e=>{const t=e.target;
  if(t.dataset.k){D.settings[t.dataset.k]=t.type==='number'||t.type==='range'?+t.value:t.value;if(t.type==='range')t.previousSibling.textContent=t.value;mark()}
+ else if(t.dataset.gh){GH[t.dataset.gh]=t.type==='checkbox'?t.checked:t.value}
  else if(t.dataset.f){const o=find(t);if(o){o[t.dataset.f]=t.type==='checkbox'?t.checked:t.value;mark()}}});
-function setImg(inp,f){const o=find(inp);if(!o||!f||!f.type.startsWith('image/'))return;const k=inp.dataset.file||inp.closest('.drop').dataset.k;o[k]=f;const im=inp.closest('.drop').querySelector('img');im.src=U(f);im.hidden=false;mark()}
+function setImg(inp,f){const o=find(inp);if(!o||!f||!f.type.startsWith('image/'))return;const k=inp.dataset.file||inp.closest('.drop').dataset.k;o[k]=f;const im=inp.closest('.drop').querySelector('img');im.src=UU(f);im.hidden=false;mark()}
 document.addEventListener('change',e=>{const t=e.target;
  if(t.dataset.file)setImg(t,t.files[0]);
  if(t.dataset.svid!==undefined){const o=find(t);if(o&&t.files[0]){o.vid=t.files[0];mark();render()}}
@@ -104,6 +117,7 @@ document.addEventListener('click',async e=>{const t=e.target.closest('button,lab
   if(a==='down'&&n<L.length-1)[L[n+1],L[n]]=[L[n],L[n+1]];
   mark();render()}
  if(t.id==='exp')exportFile();
+ if(t.id==='ghchk')ghRun(ghCheck);if(t.id==='ghpub')ghRun(ghPublish);if(t.id==='ghpull')ghRun(ghPull);
  if(t.id==='wipe'&&prompt('Для удаления всех данных введите слово УДАЛИТЬ')==='УДАЛИТЬ'){D={settings:DEF(),slides:[],videos:[],links:[]};mark();render();alert('Данные очищены в редакторе. Они удалятся из браузера, только когда вы нажмёте «Сохранить».')}});
 /* сохранение только по нажатию кнопки или Ctrl+S */
 $('#save').onclick=async()=>{try{await DB.set('site',D);dirty=false;$('#save').disabled=true;$('#st').textContent='Сохранено в '+new Date().toLocaleTimeString()}catch(e){alert('Не удалось сохранить: '+e.message)}};
@@ -125,5 +139,39 @@ async function importFile(f){
   for(const v of o.videos||[])v.blob=await d2b(v.blob);
   D={settings:{...DEF(),...o.settings},slides:o.slides||[],videos:o.videos||[],links:o.links||[]};mark();render()}
  catch(e){alert('Не получилось прочитать файл: '+e.message)}}
-(async()=>{D=await loadSite();applyTheme(D.settings);$('#st').textContent='Всё сохранено';render()})();
+/* ---------- публикация на GitHub (только по нажатию кнопки) ---------- */
+const glog=t=>{GH.log+=(GH.log?'\n':'')+t;const e=$('#ghlog');if(e)e.textContent=GH.log};
+const api=(p,o={})=>fetch(`https://api.github.com/repos/${GH.owner.trim()}/${GH.repo.trim()}/${p}`,{...o,headers:{Authorization:'Bearer '+GH.token.trim(),Accept:'application/vnd.github+json','Content-Type':'application/json'}});
+const gerr=async r=>{let m='';try{m=(await r.json()).message}catch(e){}return new Error(r.status+(m?': '+m:'')+(r.status===401?' (токен не подходит)':r.status===404?' (репозиторий не найден или у токена нет доступа)':r.status===403?' (нет права Contents: Read and write)':''))};
+const b64=async b=>(await b2d(b)).split(',')[1];
+const u64=s=>btoa(unescape(encodeURIComponent(s)));
+function ghSaveCfg(){try{const o={owner:GH.owner,repo:GH.repo,branch:GH.branch};if(GH.rem){o.token=GH.token;o.rem=true}localStorage.setItem('gh',JSON.stringify(o))}catch(e){}}
+async function ghRun(fn){const bs=$$('#ghchk,#ghpub,#ghpull');bs.forEach(b=>b.disabled=true);GH.log='';glog('…');GH.log='';
+ try{ghSaveCfg();await fn()}catch(e){glog('Ошибка: '+e.message)}bs.forEach(b=>b.disabled=false)}
+async function ghCheck(){if(!GH.token.trim())throw new Error('вставьте токен');const r=await api('');if(!r.ok)throw await gerr(r);const j=await r.json();
+ glog(j.permissions&&j.permissions.push?'Доступ есть: можно публиковать в '+j.full_name:'Репозиторий найден, но записывать в него токену нельзя. Нужно право Contents: Read and write.')}
+async function ghPull(){const r=await fetch('data.json?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('на сайте ещё нет опубликованных данных (data.json)');
+ if(!confirm('Загрузить данные с сайта в редактор? Несохранённые изменения будут заменены. В браузере ничего не сохранится, пока вы не нажмёте «Сохранить».'))return;
+ const o=await r.json();D={settings:{...DEF(),...o.settings},slides:o.slides||[],videos:o.videos||[],links:o.links||[]};mark();glog('Данные с сайта загружены в редактор.');render()}
+async function ghPublish(){
+ if(!GH.token.trim()||!GH.owner.trim()||!GH.repo.trim())throw new Error('заполните аккаунт, репозиторий и токен');
+ const jobs=[];D.slides.forEach(s=>['left','orig','right','vid'].forEach(k=>{if(s[k] instanceof Blob)jobs.push([s,k])}));D.videos.forEach(v=>{if(v.blob instanceof Blob)jobs.push([v,'blob'])});
+ const big=jobs.find(([o,k])=>o[k].size>50*1048576);if(big)throw new Error(`файл «${big[0][big[1]].name}» больше 50 МБ. Сожмите его или вставьте ссылку YouTube.`);
+ if(!confirm(`Опубликовать на сайт? Новых файлов для загрузки: ${jobs.length}. Прошлая версия data.json останется в папке backups.`)){glog('Отменено.');return}
+ let n=0;const br=GH.branch.trim()||'main';
+ for(const[o,k]of jobs){const f=o[k];n++;glog(`Загрузка ${n} из ${jobs.length}: ${f.name||k}`);
+  const ext=((f.name||'').split('.').pop()||'').toLowerCase().replace(/[^a-z0-9]/g,'')||(f.type.split('/')[1]||'bin').replace(/[^a-z0-9]/g,'');
+  const path=`media/${Date.now().toString(36)}-${uid()}.${ext}`;
+  const r=await api('contents/'+path,{method:'PUT',body:JSON.stringify({message:'Samarkand: файл',content:await b64(f),branch:br})});if(!r.ok)throw await gerr(r);
+  cache[path]=f;o[k]=path;mark()}
+ glog('Обновляю data.json…');let sha,old;const g=await api('contents/data.json?ref='+encodeURIComponent(br));
+ if(g.ok){const j=await g.json();sha=j.sha;old=j.content}else if(g.status!==404)throw await gerr(g);
+ if(old){const d=new Date(),z=x=>String(x).padStart(2,'0'),nm=`backups/data-${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}.json`;
+  const b=await api('contents/'+nm,{method:'PUT',body:JSON.stringify({message:'Samarkand: копия прошлой версии',content:old.replace(/\s/g,''),branch:br})});if(!b.ok)throw await gerr(b);glog('Прошлая версия сохранена: '+nm)}
+ const out=JSON.stringify({v:2,settings:D.settings,slides:D.slides,videos:D.videos,links:D.links});
+ const p=await api('contents/data.json',{method:'PUT',body:JSON.stringify({message:'Samarkand: публикация',content:u64(out),branch:br,...(sha?{sha}:{})})});if(!p.ok)throw await gerr(p);
+ glog('Готово. Сайт обновится через 1–2 минуты.');
+ if(confirm('Опубликовано. Сохранить текущее состояние и в этом браузере?'))$('#save').click()}
+(async()=>{D=await loadSite();applyTheme(D.settings);$('#st').textContent='Всё сохранено';render();
+ if(!D.slides.length&&!D.videos.length){try{const x=await fetch('data.json?v='+Date.now(),{cache:'no-store'});if(x.ok&&confirm('На сайте уже есть опубликованные данные. Загрузить их в редактор? (в браузере ничего не сохранится, пока вы не нажмёте «Сохранить»)')){const o=await x.json();D={settings:{...DEF(),...o.settings},slides:o.slides||[],videos:o.videos||[],links:o.links||[]};mark();render()}}catch(e){}}})();
 </script></body></html>

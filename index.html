@@ -57,8 +57,12 @@ footer{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;padding:3rem 
 <footer id="foot"></footer>
 <script src="store.js"></script>
 <script>
+async function getData(){
+ if(!location.search.includes('local')){try{const r=await fetch('data.json?v='+Date.now(),{cache:'no-store'});
+  if(r.ok){const d=await r.json();return{settings:{fit:'cover',...DEF(),...d.settings},slides:d.slides||[],videos:d.videos||[],links:d.links||[]}}}catch(e){}}
+ return loadSite()}
 (async()=>{
-const D=await loadSite(),S=D.settings;applyTheme(S);document.title=S.title;
+const D=await getData(),S=D.settings;applyTheme(S);document.title=S.title;
 $('#sub').textContent=S.sub;$('#gt').textContent=S.gTitle;$('#vt').textContent=S.vTitle;
 /* ---------- золотой песок ---------- */
 function sand(){
