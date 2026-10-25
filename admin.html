@@ -61,7 +61,7 @@ function render(){
   <div class="g2"><label>Заголовок<input data-f="title" value="${esc(s.title)}"></label><label>Анимация входа${animSel(s.anim,1)}</label></div>
   <label>Подпись<textarea rows="2" data-f="caption">${esc(s.caption)}</textarea></label>
   <div class="g3">${IMG.map(([k,l,t])=>`<div><div class="drop" data-k="${k}"><img ${s[k]?`src="${UU(s[k])}"`:'hidden'} alt=""><span>${t}<br>нажмите или перетащите</span><input type="file" accept="image/*" data-file="${k}"></div>
-  <label style="margin-top:.5rem">Подпись под фото<input data-f="${l}" placeholder="${t.replace(/ \(.*/,'')}" value="${esc(s[l])}"></label><button class="btn sm" data-clear="${k}">Убрать фото</button></div>`).join('')}</div>
+  <label style="margin-top:.5rem">Описание под рамкой (первая строка — заголовок)<textarea rows="4" data-f="${l}" placeholder="Показывается под галереей, когда это фото в центре">${esc(s[l])}</textarea></label><button class="btn sm" data-clear="${k}">Убрать фото</button></div>`).join('')}</div>
   <div class="g2" style="margin-top:.9rem"><div><label>Видео под этим блоком (любой формат)<input type="file" accept="${VID}" data-svid></label>${s.vid?`<video controls preload="metadata" src="${UU(s.vid)}"></video><button class="btn sm" data-clearvid>Убрать видео</button>`:''}</div>
   <div><label>Или ссылка (YouTube, Vimeo, mp4)<input data-f="vurl" value="${esc(s.vurl)}"></label><label>Название видео<input data-f="vtitle" value="${esc(s.vtitle)}"></label></div></div></div>`).join('')+
   `<button class="btn" data-add="slides">+ Добавить слайд</button>`;

@@ -12,7 +12,7 @@ nav{position:fixed;top:0;right:0;z-index:20;display:flex;gap:1.6rem;padding:1.2r
 section.s{padding:7rem 1.2rem 4rem;max-width:1300px;margin:auto}
 h2{font:500 clamp(34px,5vw,56px)/1.1 var(--serif);text-align:center;letter-spacing:.03em}
 .note{text-align:center;color:var(--mute);font-size:13px;margin-top:.4rem}
-.stage{--w:min(60vw,720px);position:relative;height:calc(var(--w)*.5625 + 110px);margin-top:2rem;perspective:1500px;touch-action:pan-y;user-select:none;--mx:0;--my:0}
+.stage{--w:min(54vw,660px);position:relative;height:calc(var(--w)*.5625 + 40px);margin-top:2rem;perspective:1500px;touch-action:pan-y;user-select:none;--mx:0;--my:0}
 .fr{--x:0;--s:1;--r:0deg;position:absolute;left:50%;top:calc(var(--w)*.28125 + 10px);width:var(--w);cursor:pointer;
  transform:translate(-50%,-50%) translateX(var(--x)) scale(var(--s)) rotateY(var(--r));
  transition:transform 1s cubic-bezier(.2,.8,.2,1),filter .8s;animation:var(--an,fan) 1.1s cubic-bezier(.2,.8,.2,1) backwards}
@@ -28,8 +28,6 @@ h2{font:500 clamp(34px,5vw,56px)/1.1 var(--serif);text-align:center;letter-spaci
 @keyframes kb{to{transform:scale(1.09)}}
 .in i{position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,235,170,.35) 50%,transparent 65%);transform:translateX(-120%);animation:sh 1.6s .7s ease-out forwards}
 @keyframes sh{to{transform:translateX(120%)}}
-.fr figcaption{text-align:center;margin-top:.9rem;font:500 17px var(--serif);color:var(--mute);letter-spacing:.08em}
-[data-p=c] figcaption{color:var(--gold)}
 @keyframes fan{from{opacity:0;transform:translate(-50%,-50%) translateX(0) scale(.5) rotateY(80deg)}}
 @keyframes rise{from{opacity:0;transform:translate(-50%,calc(-50% + 190px)) translateX(var(--x)) scale(var(--s)) rotateY(var(--r))}}
 @keyframes zoom{from{opacity:0;filter:blur(18px);transform:translate(-50%,-50%) translateX(var(--x)) scale(1.9) rotateY(var(--r))}}
@@ -43,7 +41,11 @@ h2{font:500 clamp(34px,5vw,56px)/1.1 var(--serif);text-align:center;letter-spaci
 footer{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;padding:3rem 1rem 5rem}
 .work{padding:3.5rem 0 4.5rem}
 .work h3{font:500 clamp(28px,4vw,44px)/1.1 var(--serif);text-align:center}
-.wcap{text-align:center;color:var(--mute);max-width:620px;margin:.6rem auto 0}
+.wcap{text-align:center;font:400 17px/1.65 Manrope,sans-serif;color:#d6d0c1;max-width:680px;margin:.8rem auto 0}
+.tag{position:absolute;left:10px;top:10px;z-index:2;padding:.25em .9em;font:600 15px Manrope,sans-serif;color:var(--gold);background:rgba(18,19,21,.8);border:1px solid rgba(212,175,55,.5);border-radius:30px}
+.fdesc{max-width:780px;margin:1.6rem auto 0;padding:1.1rem 1.5rem;background:rgba(18,19,21,.8);border:1px solid rgba(212,175,55,.3);font:400 17px/1.7 Manrope,sans-serif;color:#f1ece0;white-space:pre-line}
+.fdesc b{display:block;color:var(--gold);font:600 19px/1.4 Manrope,sans-serif;margin-bottom:.4rem}.fdesc:empty{display:none}
+@media(max-width:700px){.fdesc{font-size:16px;padding:1rem}}
 .stage:not(.go) .fr{opacity:0}
 .wv{max-width:min(92vw,880px);margin:2.2rem auto 0;border:1px solid rgba(212,175,55,.25);padding:.7rem;background:rgba(0,0,0,.18)}
 .wv video,.wv iframe{width:100%;aspect-ratio:16/9;background:#000;border:0;display:block}
@@ -119,11 +121,12 @@ slides.forEach(s=>{
  const w=document.createElement('article');w.className='work';
  w.innerHTML=(s.title?`<h3>${esc(s.title)}</h3>`:'')+(s.caption?`<p class="wcap">${esc(s.caption)}</p>`:'')+
   `<div class="stage" style="--an:${s.anim||S.anim}">`+[['l','left','ll','Вариант A'],['c','orig','ol','Оригинал'],['r','right','rl','Вариант B']].map(([p,k,l,d])=>
-  `<figure class="fr" data-p="${p}" data-home="${p}"><div class="in">${s[k]?`<img src="${U(s[k])}" alt="" draggable="false">`:''}<i></i></div><figcaption>${esc(s[l]||d)}</figcaption></figure>`).join('')+'</div>';
- const st=$('.stage',w);let moved=false,x0=null,y0=0;
+  `<figure class="fr" data-p="${p}" data-home="${p}" data-d="${esc(s[l])}"><div class="in">${s[k]?`<img src="${U(s[k])}" alt="" draggable="false">`:''}<span class="tag">${d}</span><i></i></div></figure>`).join('')+'</div>';
+ const st=$('.stage',w),fd=document.createElement('div');fd.className='fdesc';st.after(fd);let moved=false,x0=null,y0=0;
+ const sync=()=>{const t=($('.fr[data-p=c]',st).dataset.d||'').trim(),[a,...b]=t.split('\n'),rest=b.join('\n').trim();fd.innerHTML=!t?'':rest?`<b>${esc(a)}</b>${esc(rest)}`:esc(a)};sync();
  $$('.fr',st).forEach(f=>f.onclick=()=>{if(moved)return;const c=$('.fr[data-p=c]',st);
-  if(f===c){const h=$('.fr[data-home=c]',st);if(h!==c)swap(h,c)}else swap(f,c)});
- const dn=(x,y)=>{x0=x;y0=y},up=(x,y)=>{if(x0==null)return;const d=x-x0,v=y-y0;x0=null;if(Math.abs(d)>12){moved=true;setTimeout(()=>moved=false,150)}if(Math.abs(d)>50&&Math.abs(d)>Math.abs(v))rot(st,d<0?1:-1)};
+  if(f===c){const h=$('.fr[data-home=c]',st);if(h!==c)swap(h,c)}else swap(f,c);sync()});
+ const dn=(x,y)=>{x0=x;y0=y},up=(x,y)=>{if(x0==null)return;const d=x-x0,v=y-y0;x0=null;if(Math.abs(d)>12){moved=true;setTimeout(()=>moved=false,150)}if(Math.abs(d)>50&&Math.abs(d)>Math.abs(v)){rot(st,d<0?1:-1);sync()}};
  st.addEventListener('pointerdown',e=>dn(e.clientX,e.clientY));st.addEventListener('pointerup',e=>up(e.clientX,e.clientY));
  st.addEventListener('touchstart',e=>dn(e.touches[0].clientX,e.touches[0].clientY),{passive:true});
  st.addEventListener('touchend',e=>up(e.changedTouches[0].clientX,e.changedTouches[0].clientY),{passive:true});
