@@ -54,7 +54,7 @@ html,body{overflow-x:clip;max-width:100%}
 .fr,.in{backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .fr{will-change:transform}
 .fdesc{overflow-anchor:none}
-#bgfix{position:fixed;left:0;top:0;width:100%;height:100lvh;z-index:-1;pointer-events:none;transform:translateZ(0)}
+#bgfix{position:fixed;left:0;top:0;width:100%;height:100lvh;z-index:-1;pointer-events:none}
 @media(hover:none){.in{transform:none!important}}
 /* --- золотая рамка описания: бегущая линия + мягкое свечение --- */
 @property --ang{syntax:'<angle>';inherits:false;initial-value:0deg}
@@ -72,6 +72,22 @@ html,body{overflow-x:clip;max-width:100%}
 .wv{max-width:min(92vw,880px);margin:2.2rem auto 0;border:1px solid rgba(212,175,55,.25);padding:.7rem;background:rgba(0,0,0,.18)}
 .wv video,.wv iframe{width:100%;aspect-ratio:16/9;background:#000;border:0;display:block}
 .wv p{font:500 20px var(--serif);margin-top:.6rem}
+
+/* --- крупнее картинки и меньше пустоты --- */
+.stage{--w:min(60vw,820px)}
+@media(max-width:700px){
+ #hero{height:72svh;min-height:400px}
+ section.s{padding:3rem .5rem 1.5rem}
+ .stage{--w:min(94vw,720px);margin-top:1rem;height:calc(var(--w)*.5625 + 14px)}
+ .fr{top:calc(var(--w)*.28125 + 7px)}
+ .fr[data-p=l]{--x:-80%;--s:.8}.fr[data-p=r]{--x:80%;--s:.8}
+ .work{padding:1.6rem 0 1.8rem}
+ .wcap{font-size:15px;margin-top:.5rem}
+ .fdesc{margin-top:.8rem;padding:.9rem 1rem}
+ .wv{margin-top:1.2rem}
+ #vgrid{margin-top:1.4rem}
+ footer{padding:1.5rem 1rem 3rem}
+}
 </style></head><body>
 <nav id="nav"></nav>
 <header id="hero"><canvas id="sand"></canvas><p id="sub"></p><div class="hint"></div></header>
@@ -91,7 +107,7 @@ const D=await getData(),S=D.settings;applyTheme(S);document.title=S.title;
 (()=>{const g=e=>getComputedStyle(e),cands=[g(document.body),g(document.documentElement)];
  const c=cands.find(x=>x.backgroundImage!=='none')||cands.find(x=>x.backgroundColor!=='rgba(0, 0, 0, 0)')||cands[0];
  const b=document.createElement('div');b.id='bgfix';
- Object.assign(b.style,{backgroundColor:c.backgroundColor,backgroundImage:c.backgroundImage,backgroundSize:c.backgroundSize==='auto'?'cover':c.backgroundSize,backgroundPosition:c.backgroundPosition,backgroundRepeat:c.backgroundRepeat});
+ Object.assign(b.style,{backgroundColor:c.backgroundColor,backgroundImage:c.backgroundImage,backgroundSize:c.backgroundSize,backgroundPosition:c.backgroundPosition,backgroundRepeat:c.backgroundRepeat});
  document.body.prepend(b);
  document.documentElement.style.background=c.backgroundColor;document.body.style.background='transparent'})();
 $('#sub').textContent=S.sub;$('#gt').textContent=S.gTitle;$('#vt').textContent=S.vTitle;
