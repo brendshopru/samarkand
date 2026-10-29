@@ -17,8 +17,12 @@ h2{font:500 clamp(34px,5vw,56px)/1.1 var(--serif);text-align:center;letter-spaci
 .work h3{font:500 clamp(28px,4vw,44px)/1.1 var(--serif);text-align:center}
 .wcap{text-align:center;font:400 17px/1.65 Manrope,sans-serif;color:#d6d0c1;max-width:680px;margin:.8rem auto 0}
 /* --- карточки по порядку --- */
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:1.4rem;align-items:start;margin-top:1.6rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:1.4rem;align-items:stretch;margin-top:1.6rem}
 .cards[data-n="1"]{max-width:820px;margin-inline:auto}.cards[data-n="2"]{max-width:960px;margin-inline:auto}
+.card .fdesc{flex:1 1 auto}
+.fdesc .ft{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:8;line-clamp:8;overflow:hidden}
+.fdesc .mb{display:none;margin-top:.7rem;color:var(--gold);font:600 14px Manrope,sans-serif;letter-spacing:.02em}
+.fdesc.more .mb{display:block}
 .card{display:flex;flex-direction:column;gap:.9rem;margin:0;outline:0;-webkit-tap-highlight-color:transparent}
 .card[data-z]{cursor:zoom-in}
 .cards{position:relative}
@@ -84,7 +88,7 @@ html.lbo,html.lbo body{overflow:hidden}
  #vgrid{margin-top:1.4rem}
  footer{padding:1.5rem 1rem 3rem}
  .lbn{width:38px;height:52px;opacity:.7}
- .cards,.cards[data-n="1"],.cards[data-n="2"]{display:flex;align-items:flex-start;gap:.8rem;max-width:none;margin-inline:-.5rem;padding:.5rem 7vw 2rem;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:7vw;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+ .cards,.cards[data-n="1"],.cards[data-n="2"]{display:flex;align-items:stretch;gap:.8rem;max-width:none;margin-inline:-.5rem;padding:.5rem 7vw 2rem;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:7vw;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}
  .cards::-webkit-scrollbar{display:none}
  .card{flex:0 0 86vw;scroll-snap-align:center;scroll-snap-stop:always;transition:transform .4s,opacity .4s}
  .card:not(.act){opacity:.55;transform:scale(.93)}
@@ -175,13 +179,15 @@ lb.addEventListener('touchend',e=>{if(tx==null)return;const dx=e.changedTouches[
 /* ---------- работы: Вариант A — Оригинал — Вариант B по порядку ---------- */
 slides.forEach(s=>{
  const w=document.createElement('article');w.className='work';
- const items=[['left','ll','Вариант A'],['orig','ol','Оригинал'],['right','rl','Вариант B']].map(([k,l,tag])=>({src:s[k]?U(s[k]):'',d:(s[l]||'').trim(),tag})).filter(i=>i.src||i.d);
+ const items=[['left','ll','Вариант A'],['orig','ol','Оригинал'],['right','rl','Вариант B']].map(([k,l,tag])=>({src:s[k]?U(s[k]):'',d:((s[l]||'').trim().toLowerCase()===tag.toLowerCase()?'':(s[l]||'').trim()),tag})).filter(i=>i.src||i.d);
  const list=items.filter(i=>i.src);
  w.innerHTML=(s.title?`<h3>${esc(s.title)}</h3>`:'')+(s.caption?`<p class="wcap">${esc(s.caption)}</p>`:'')+
-  `<div class="cards" data-n="${items.length}">`+items.map(it=>`<figure class="card"${it.src?' data-z tabindex="0"':''}><div class="in">${it.src?`<img src="${it.src}" alt="" loading="lazy" draggable="false">`:''}<span class="tag">${it.tag}</span><i></i></div><div class="fdesc">${fmt(it.d)}</div></figure>`).join('')+'</div>';
+  `<div class="cards" data-n="${items.length}">`+items.map(it=>`<figure class="card"${it.src?' data-z tabindex="0"':''}><div class="in">${it.src?`<img src="${it.src}" alt="" loading="lazy" draggable="false">`:''}<span class="tag">${it.tag}</span><i></i></div>${it.d?`<div class="fdesc"><div class="ft">${fmt(it.d)}</div>${it.src?'<span class="mb">Читать полностью →</span>':''}</div>`:''}</figure>`).join('')+'</div>';
  $$('.card',w).forEach((c,i)=>{if(!items[i].src)return;const o=()=>openLB(list,list.indexOf(items[i]));c.onclick=o;c.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();o()}}});
  if(s.vid||s.vurl)w.append(mkVid({blob:s.vid,url:s.vurl,title:s.vtitle}));
  $('#works').append(w);
+ const chk=()=>$$('.fdesc',w).forEach(f=>{const t=$('.ft',f);f.classList.toggle('more',!!t&&t.scrollHeight>t.clientHeight+1)});
+ chk();addEventListener('resize',chk);(document.fonts?document.fonts.ready:Promise.resolve()).then(chk);
  const cs=$('.cards',w),cd=$$('.card',w);
  if(cd.length>1){const dots=document.createElement('div');dots.className='dots';dots.innerHTML=cd.map(()=>'<b></b>').join('');cs.after(dots);
   const act=()=>{const m=cs.scrollLeft+cs.clientWidth/2;let bi=0,bd=1e9;cd.forEach((c,i)=>{const d=Math.abs(c.offsetLeft+c.offsetWidth/2-m);if(d<bd){bd=d;bi=i}});
