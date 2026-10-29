@@ -63,16 +63,19 @@ h2{font:500 clamp(34px,5vw,56px)/1.1 var(--serif);text-align:center;letter-spaci
 footer{display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;padding:2rem 1rem 4rem}
 /* --- просмотр фото --- */
 html.lbo,html.lbo body{overflow:hidden}
-#lb{position:fixed;inset:0;z-index:100;display:flex;background:rgba(5,6,8,.95);overscroll-behavior:contain}
+#lb{position:fixed;inset:0;z-index:100;display:flex;background:#07080a;overscroll-behavior:contain;touch-action:pan-y}
 #lb[hidden]{display:none}
 .lbs{width:100%;height:100%;box-sizing:border-box;overflow:auto;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:1rem;padding:calc(env(safe-area-inset-top,0px) + 62px) 14px calc(env(safe-area-inset-bottom,0px) + 22px)}
-#lbi{max-width:100%;max-height:calc(100svh - 210px);min-height:120px;object-fit:contain;border:1px solid rgba(212,175,55,.45);box-shadow:0 0 40px rgba(212,175,55,.25);background:rgba(0,0,0,.4)}
-#lbd{max-width:780px;flex:none}
+.lbw{position:relative;width:100%;max-width:1400px;flex:none;overflow:hidden;touch-action:none;border:1px solid rgba(212,175,55,.45);box-shadow:0 0 40px rgba(212,175,55,.2);background:rgba(0,0,0,.4)}
+#lbi{display:block;width:100%;height:auto;max-height:calc(100svh - 190px);min-height:120px;object-fit:contain;transform-origin:center;will-change:transform;user-select:none;-webkit-user-drag:none}
+#lb.nod #lbi{max-height:calc(100svh - 130px)}
+#lbd{max-width:780px;flex:none;font-size:15px}
+#lbd b{font-size:17px}
 #lbd[hidden]{display:none}
 #lbt{position:fixed;left:14px;top:calc(env(safe-area-inset-top,0px) + 20px);z-index:2;font:600 15px Manrope,sans-serif;color:var(--gold)}
-.lbx,.lbn{position:fixed;z-index:3;border:1px solid rgba(212,175,55,.6);background:rgba(18,19,21,.85);color:#ffe9a0;cursor:pointer;font-family:Manrope,sans-serif;-webkit-tap-highlight-color:transparent}
-.lbx{top:calc(env(safe-area-inset-top,0px) + 10px);right:12px;width:48px;height:48px;border-radius:50%;font-size:22px}
-.lbn{top:50%;transform:translateY(-50%);width:44px;height:60px;border-radius:6px;font-size:30px;opacity:.85}
+.lbx,.lbn{z-index:3;border:1px solid rgba(212,175,55,.6);background:rgba(18,19,21,.85);color:#ffe9a0;cursor:pointer;font-family:Manrope,sans-serif;-webkit-tap-highlight-color:transparent}
+.lbx{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:12px;width:48px;height:48px;border-radius:50%;font-size:22px}
+.lbn{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:60px;border-radius:6px;font-size:30px;opacity:.85}
 .lbn[hidden]{display:none}
 #lbp{left:8px}#lbn{right:8px}
 .lbx:hover,.lbn:hover{box-shadow:0 0 18px rgba(255,200,80,.6);border-color:#ffe08a}
@@ -104,7 +107,7 @@ html.lbo,html.lbo body{overflow:hidden}
 <p class="note">Нажмите на фото, чтобы открыть его крупно</p><div id="works"></div></section>
 <section class="s" id="videos" hidden><h2 id="vt"></h2><div id="vgrid"></div></section>
 <footer id="foot"></footer>
-<div id="lb" hidden><span id="lbt"></span><button class="lbx" id="lbx" aria-label="Закрыть">✕</button><button class="lbn" id="lbp" aria-label="Назад">‹</button><button class="lbn" id="lbn" aria-label="Вперёд">›</button><div class="lbs"><img id="lbi" alt=""><div class="fdesc" id="lbd" hidden></div></div></div>
+<div id="lb" hidden><span id="lbt"></span><button class="lbx" id="lbx" aria-label="Закрыть">✕</button><div class="lbs"><div class="lbw"><img id="lbi" alt="" draggable="false"><button class="lbn" id="lbp" aria-label="Назад">‹</button><button class="lbn" id="lbn" aria-label="Вперёд">›</button></div><div class="fdesc" id="lbd" hidden></div></div></div>
 <script src="store.js"></script>
 <script>
 async function getData(){
@@ -164,7 +167,11 @@ function mkVid(v){const d=document.createElement('div');d.className='wv';const e
 const fmt=t=>{t=(t||'').trim();const [a,...b]=t.split('\n'),rest=b.join('\n').trim();return !t?'':rest?`<b>${esc(a)}</b>${esc(rest)}`:esc(a)};
 /* ---------- просмотр фото (кнопка «назад» на телефоне закрывает его, а не сайт) ---------- */
 const lb=$('#lb'),lbi=$('#lbi'),lbd=$('#lbd');let L=[],li=0,lbOpen=false;
-function showLB(){const it=L[li];lbi.src=it.src;$('#lbt').textContent=it.tag+(L.length>1?'  ·  '+(li+1)+' / '+L.length:'');lbd.innerHTML=fmt(it.d);lbd.hidden=!it.d;$('#lbp').hidden=$('#lbn').hidden=L.length<2;$('.lbs',lb).scrollTop=0}
+const Z={z:1,x:0,y:0},wrap=$('.lbw',lb);
+const zApply=a=>{lbi.style.transition=a?'transform .25s':'none';lbi.style.transform=`translate(${Z.x}px,${Z.y}px) scale(${Z.z})`};
+const zReset=a=>{Z.z=1;Z.x=Z.y=0;zApply(a)};
+const zClamp=()=>{const r=wrap.getBoundingClientRect(),mx=(Z.z-1)*r.width/2,my=(Z.z-1)*r.height/2;Z.x=Math.max(-mx,Math.min(mx,Z.x));Z.y=Math.max(-my,Math.min(my,Z.y))};
+function showLB(){const it=L[li];zReset(false);lbi.src=it.src;$('#lbt').textContent=it.tag+(L.length>1?'  ·  '+(li+1)+' / '+L.length:'');lbd.innerHTML=fmt(it.d);lbd.hidden=!it.d;lb.classList.toggle('nod',!it.d);$('#lbp').hidden=$('#lbn').hidden=L.length<2;$('.lbs',lb).scrollTop=0}
 function openLB(list,i){L=list;li=i;showLB();lb.hidden=false;document.documentElement.classList.add('lbo');
  if(!lbOpen){lbOpen=true;try{history.pushState({lb:1},'')}catch(e){}}}
 function hideLB(){lb.hidden=true;lbi.removeAttribute('src');document.documentElement.classList.remove('lbo');lbOpen=false}
@@ -174,8 +181,23 @@ addEventListener('popstate',()=>{if(lbOpen)hideLB()});
 $('#lbx').onclick=closeLB;$('#lbp').onclick=()=>stepLB(-1);$('#lbn').onclick=()=>stepLB(1);
 lb.addEventListener('click',e=>{if(e.target===lb||e.target.classList.contains('lbs'))closeLB()});
 addEventListener('keydown',e=>{if(!lbOpen)return;if(e.key==='Escape')closeLB();else if(e.key==='ArrowLeft')stepLB(-1);else if(e.key==='ArrowRight')stepLB(1)});
-let tx=null,ty=0;lb.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
+let tx=null,ty=0;lb.addEventListener('touchstart',e=>{if(e.touches.length>1||Z.z>1){tx=null;return}tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
 lb.addEventListener('touchend',e=>{if(tx==null)return;const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;tx=null;if(Math.abs(dx)>55&&Math.abs(dx)>Math.abs(dy)*1.5)stepLB(dx<0?1:-1)},{passive:true});
+/* зум фото в окне просмотра: щипок двумя пальцами, двигать одним, двойное касание */
+let gz=null,lastTap=0;
+wrap.addEventListener('touchstart',e=>{
+ if(e.touches.length===2){const [a,b]=e.touches,r=wrap.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,mx=(a.clientX+b.clientX)/2,my=(a.clientY+b.clientY)/2;
+  gz={t:2,d:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),z:Z.z,cx,cy,px:(mx-cx-Z.x)/Z.z,py:(my-cy-Z.y)/Z.z}}
+ else if(e.touches.length===1){const t=e.touches[0],now=Date.now();
+  if(now-lastTap<300){lastTap=0;gz=null;if(Z.z>1)zReset(true);else{Z.z=2.5;Z.x=Z.y=0;zApply(true)}}
+  else{lastTap=now;gz={t:1,sx:t.clientX,sy:t.clientY,x:Z.x,y:Z.y}}}
+},{passive:true});
+wrap.addEventListener('touchmove',e=>{if(!gz)return;
+ if(gz.t===2&&e.touches.length===2){const [a,b]=e.touches,d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY),mx=(a.clientX+b.clientX)/2,my=(a.clientY+b.clientY)/2;
+  Z.z=Math.max(1,Math.min(5,gz.z*d/gz.d));Z.x=mx-gz.cx-Z.z*gz.px;Z.y=my-gz.cy-Z.z*gz.py;zClamp();zApply(false)}
+ else if(gz.t===1&&Z.z>1&&e.touches.length===1){const t=e.touches[0];Z.x=gz.x+t.clientX-gz.sx;Z.y=gz.y+t.clientY-gz.sy;zClamp();zApply(false)}
+ e.preventDefault()},{passive:false});
+wrap.addEventListener('touchend',e=>{if(e.touches.length===0){gz=null;if(Z.z<1.05)zReset(true)}else if(e.touches.length===1){gz=null}},{passive:true});
 /* ---------- работы: Вариант A — Оригинал — Вариант B по порядку ---------- */
 slides.forEach(s=>{
  const w=document.createElement('article');w.className='work';
